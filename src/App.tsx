@@ -20,6 +20,12 @@ import { AdminSettingsPage } from '@/features/admin/AdminSettingsPage'
 import { AdminShopsPage } from '@/features/admin/AdminShopsPage'
 import { ChangePasswordPage } from '@/features/auth/ChangePasswordPage'
 import { LoginPage } from '@/features/auth/LoginPage'
+import { HistoryPage } from '@/features/products/HistoryPage'
+import { InventoryPage } from '@/features/products/InventoryPage'
+import { ProductFormPage } from '@/features/products/ProductFormPage'
+import { ReceiptPage } from '@/features/products/ReceiptPage'
+import { StockCardPage } from '@/features/products/StockCardPage'
+import { StocktakePage } from '@/features/products/StocktakePage'
 import { ShopSettingsPage } from '@/features/shop/ShopSettingsPage'
 import { ShopShippersPage } from '@/features/shop/ShopShippersPage'
 import { isConfigured } from '@/lib/env'
@@ -78,7 +84,13 @@ export function App() {
                   <Route index element={<ComingSoon title="Tổng quan" />} />
                   <Route path="orders" element={<ComingSoon title="Đơn hàng" />} />
                   <Route path="orders/new" element={<ComingSoon title="Tạo đơn" />} />
-                  <Route path="inventory" element={<ComingSoon title="Kho" />} />
+                  <Route path="inventory" element={<InventoryPage />} />
+                  <Route path="inventory/products/new" element={<ProductFormPage />} />
+                  <Route path="inventory/products/:productId" element={<ProductFormPage />} />
+                  <Route path="inventory/receipts/new" element={<ReceiptPage />} />
+                  <Route path="inventory/stocktake" element={<StocktakePage />} />
+                  <Route path="inventory/stock-card/:variantId" element={<StockCardPage />} />
+                  <Route path="inventory/history" element={<HistoryPage />} />
                   <Route path="customers" element={<ComingSoon title="Khách hàng" />} />
                   <Route path="reports" element={<ComingSoon title="Báo cáo" />} />
                   <Route path="settings" element={<ShopSettingsPage />} />

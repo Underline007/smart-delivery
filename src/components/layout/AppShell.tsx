@@ -73,3 +73,15 @@ export function AppShell({ nav, banner }: { nav: NavItem[]; banner?: ReactNode }
 export function PageBody({ className, children }: { className?: string; children: ReactNode }) {
   return <main className={cn('mx-auto max-w-screen-sm px-4 py-4', className)}>{children}</main>
 }
+
+/**
+ * Action bar fixed above the bottom navigation (e.g. the main "Save" button of a form).
+ * Pages using it should add `pb-28` to their content.
+ */
+export function StickyBar({ children }: { children: ReactNode }) {
+  return (
+    <div className="fixed inset-x-0 bottom-[calc(4rem+env(safe-area-inset-bottom))] z-20 border-t border-border bg-surface/95 backdrop-blur">
+      <div className="mx-auto max-w-screen-sm px-4 py-3">{children}</div>
+    </div>
+  )
+}
