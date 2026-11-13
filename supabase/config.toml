@@ -434,3 +434,7 @@ verify_jwt = false
 # Resolves short Google Maps links; checks the caller's JWT itself.
 [functions.resolve-map-link]
 verify_jwt = false
+
+# Optional route optimisation (needs the ORS_API_KEY secret); checks the caller itself.
+[functions.optimize-route]
+verify_jwt = false

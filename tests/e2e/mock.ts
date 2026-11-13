@@ -55,7 +55,14 @@ async function respond(route: Route, value: unknown, body: unknown, url: URL, wa
 }
 
 /** Mocks the Supabase REST API. Unknown RPCs and tables answer 404 so tests fail loudly. */
+const PNG_1X1 = Buffer.from(
+  'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==',
+  'base64',
+)
+
 export async function mockSupabase(page: Page, options: MockOptions = {}) {
+  // Map tiles are never fetched from the real server in tests.
+  await page.route('https://tile.openstreetmap.org/**', (route) => route.fulfill({ status: 200, contentType: 'image/png', body: PNG_1X1 }))
   await page.route('http://supabase.test/**', async (route) => {
     const request = route.request()
     const url = new URL(request.url())

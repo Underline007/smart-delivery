@@ -35,6 +35,10 @@ import { StocktakePage } from '@/features/products/StocktakePage'
 import { OrderDetailPage } from '@/features/orders/OrderDetailPage'
 import { OrderFormPage } from '@/features/orders/OrderFormPage'
 import { OrdersPage } from '@/features/orders/OrdersPage'
+import { ShipperAccountPage, ShipperHistoryPage, ShipperTripPage, ShipperTripsPage } from '@/features/delivery/ShipperPages'
+import { TripDetailPage } from '@/features/delivery/TripDetailPage'
+import { TripPlannerPage } from '@/features/delivery/TripPlannerPage'
+import { TripsPage } from '@/features/delivery/TripsPage'
 import { ShopSettingsPage } from '@/features/shop/ShopSettingsPage'
 import { ShopShippersPage } from '@/features/shop/ShopShippersPage'
 import { isConfigured } from '@/lib/env'
@@ -106,6 +110,9 @@ export function App() {
                   <Route path="inventory/history" element={<HistoryPage />} />
                   <Route path="customers" element={<CustomersPage />} />
                   <Route path="customers/:customerId" element={<CustomerDetailPage />} />
+                  <Route path="delivery" element={<TripsPage />} />
+                  <Route path="delivery/new" element={<TripPlannerPage />} />
+                  <Route path="delivery/:tripId" element={<TripDetailPage />} />
                   <Route path="vtp/export" element={<VtpExportPage />} />
                   <Route path="vtp/tracking" element={<VtpTrackingPage />} />
                   <Route path="reports" element={<ComingSoon title="Báo cáo" />} />
@@ -121,9 +128,10 @@ export function App() {
                     </RequireAccountType>
                   }
                 >
-                  <Route index element={<ComingSoon title="Chuyến hôm nay" />} />
-                  <Route path="history" element={<ComingSoon title="Lịch sử" />} />
-                  <Route path="account" element={<ComingSoon title="Tài khoản" />} />
+                  <Route index element={<ShipperTripsPage />} />
+                  <Route path="trip/:tripId" element={<ShipperTripPage />} />
+                  <Route path="history" element={<ShipperHistoryPage />} />
+                  <Route path="account" element={<ShipperAccountPage />} />
                 </Route>
               </Route>
             </Route>

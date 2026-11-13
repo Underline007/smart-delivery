@@ -1,5 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
-import { ChevronRight, ChartColumn, FileSpreadsheet, PackageCheck, Truck } from 'lucide-react'
+import { ChevronRight, ChartColumn, FileSpreadsheet, PackageCheck, Route as RouteIcon, Truck } from 'lucide-react'
 import { useState, type FormEvent } from 'react'
 import { Link } from 'react-router'
 import { useShop } from '@/app/current-shop'
@@ -205,6 +205,8 @@ export function ShopSettingsPage() {
       <PageHeader title="Cài đặt" subtitle={shop.name} />
       <PageBody className="flex flex-col gap-5">
         <Card className="p-0">
+          <NavRow to="/shop/delivery" icon={<RouteIcon className="size-5" />} label="Chuyến giao hàng" />
+          <div className="border-t border-border" />
           <NavRow to="/shop/settings/shippers" icon={<Truck className="size-5" />} label="Shipper của shop" />
           <div className="border-t border-border" />
           <NavRow to="/shop/vtp/export" icon={<FileSpreadsheet className="size-5" />} label="Xuất Excel ViettelPost" />
