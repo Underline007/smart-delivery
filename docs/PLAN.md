@@ -5,9 +5,9 @@
 
 | | |
 |---|---|
-| Phiên bản | 0.2 — cập nhật theo câu trả lời đợt 1 (3 vai trò, sản phẩm có biến thể, trừ kho khi xác nhận) |
+| Phiên bản | 0.3 — đã xác nhận các giả định về 3 vai trò; ghi lại tiến độ bản nháp và quy ước kỹ thuật |
 | Ngày | 13/11/2026 |
-| Trạng thái | Chưa code. Còn chờ một số đầu vào, xem [mục 0](#0-nhật-ký-quyết-định) và [mục 11](#11-việc-còn-chờ) |
+| Trạng thái | **Có bản nháp code GĐ 0–1, chờ duyệt** (xem [mục 13](#13-tiến-độ-thực-hiện)). Còn chờ một số đầu vào, xem [mục 0](#0-nhật-ký-quyết-định) và [mục 11](#11-việc-còn-chờ) |
 
 ---
 
@@ -26,6 +26,8 @@
 10. [Hướng mở rộng](#10-hướng-mở-rộng)
 11. [Việc còn chờ](#11-việc-còn-chờ)
 12. [Tài liệu tham khảo](#12-tài-liệu-tham-khảo)
+13. [Tiến độ thực hiện](#13-tiến-độ-thực-hiện)
+14. [Quy ước kỹ thuật](#14-quy-ước-kỹ-thuật)
 
 ---
 
@@ -41,14 +43,14 @@
 | Q6 | Tin nhắn đặt hàng mẫu (để làm bộ tách địa chỉ) | ⏳ Bạn gửi sau, dạng file | Giai đoạn 3 (M2) |
 | Q7 | Repo riêng tư | ⏳ Bạn đổi sau | Trước khi nhập dữ liệu thật |
 
-**Giả định đang dùng cho Q2 (cần bạn xác nhận hoặc sửa)**
+**Chi tiết của Q2** (✅ chủ dự án đã xác nhận cả 4 điểm ngày 13/11/2026)
 
-| # | Giả định |
-|---|---|
-| A1 | Hệ thống có thể có **nhiều cửa hàng**. Dữ liệu mỗi shop (sản phẩm, kho, khách, đơn, chuyến giao) **tách biệt hoàn toàn**: shop này không thấy dữ liệu shop kia |
-| A2 | **Admin tạo cửa hàng và tạo mọi tài khoản** (chủ cửa hàng, shipper). Admin xem và thao tác được trên mọi cửa hàng |
-| A3 | Shipper nằm trong **danh sách chung của hệ thống**. Chủ cửa hàng chọn shipper từ danh sách này để thêm vào shop mình. **Một shipper có thể làm cho nhiều shop** |
-| A4 | Đăng nhập bằng **SĐT + mật khẩu** (không dùng mã SMS vì SMS tốn phí) |
+| # | Nội dung | Trạng thái |
+|---|---|---|
+| A1 | Hệ thống có thể có **nhiều cửa hàng**. Dữ liệu mỗi shop (sản phẩm, kho, khách, đơn, chuyến giao) **tách biệt hoàn toàn**: shop này không thấy dữ liệu shop kia | ✅ Đã xác nhận |
+| A2 | **Admin tạo cửa hàng và tạo mọi tài khoản** (chủ cửa hàng, shipper). Admin xem và thao tác được trên mọi cửa hàng | ✅ Đã xác nhận |
+| A3 | Shipper nằm trong **danh sách chung của hệ thống**. Chủ cửa hàng chọn shipper từ danh sách này để thêm vào shop mình. **Một shipper có thể làm cho nhiều shop** | ✅ Đã xác nhận |
+| A4 | Đăng nhập bằng **SĐT + mật khẩu** (không dùng mã SMS vì SMS tốn phí) | ✅ Đã xác nhận |
 
 Nếu thực tế chỉ có 1 cửa hàng, thiết kế này vẫn chạy bình thường, chỉ là ô chọn cửa hàng được ẩn đi.
 
@@ -542,8 +544,8 @@ erDiagram
 | Bảng | Cột chính |
 |---|---|
 | `profiles` | `id` (= auth.users.id), `full_name`, `phone` (duy nhất), `account_type` (admin / owner / shipper), `active`, `must_change_password` |
-| `shops` | `id`, `name`, `phone`, `address_detail`, `province_code`, `ward_code`, `lat`, `lng`, `order_prefix`, `active`, `created_by` |
-| `shop_members` | `shop_id`, `user_id`, `role` (owner / shipper), `active`, `added_by`, `added_at` — khoá chính (`shop_id`, `user_id`) |
+| `shops` | `id`, `name`, `phone`, `address_detail`, `province_code`, `ward_code`, `lat`, `lng`, `order_prefix` (**duy nhất toàn hệ thống**, 1–5 ký tự in hoa/số), `active`, `created_by`. Bản nháp M0 dùng một cột `address` dạng chữ; `province_code` / `ward_code` thêm ở M2 |
+| `shop_members` | `shop_id`, `user_id`, `role` (owner / shipper), `active`, `added_by`, `added_at` — khoá chính (`shop_id`, `user_id`). **Trigger** chặn vai trò không khớp loại tài khoản (owner ↔ owner, shipper ↔ shipper) |
 | `shop_settings` | `shop_id`, thông tin người gửi, `vtp_default_service`, `vtp_fee_payer`, `vtp_delivery_requirement`, `packaging_weight_g`, `allow_negative_stock`, mẫu tin nhắn |
 | `system_settings` (1 dòng) | `map_provider`, `vtp_template_path`, `vtp_template_version`, `vtp_column_mapping` (jsonb) |
 | `audit_logs` | `id`, `shop_id` (có thể rỗng), `actor_id`, `action`, `target_type`, `target_id`, `data` (jsonb), `created_at` |
@@ -581,10 +583,18 @@ erDiagram
 
 | Nhóm | Hàm | Việc làm |
 |---|---|---|
-| Quản trị | Edge Function `admin-users` | Tạo tài khoản (SĐT → email nội bộ), đặt lại mật khẩu, khoá/mở. Chỉ admin gọi được |
-| | `create_shop(...)`, `set_shop_owner(shop_id, user_id)` | Admin tạo shop, gán chủ |
-| | `search_shippers(q)` | Chủ shop tìm shipper trong danh sách chung (chỉ trả về tên + SĐT) |
-| | `add_shop_shipper(shop_id, user_id)` / `remove_shop_shipper(...)` | Thêm/bỏ shipper; chặn bỏ khi đang có chuyến dở; ghi `audit_logs` |
+| Quản trị (M0 — **đã có trong bản nháp**) | Edge Function `admin-users` | Hành động `create` / `update` / `reset_password` / `set_active`: tạo tài khoản (SĐT → email nội bộ), sửa tên/SĐT, đặt lại mật khẩu tạm, khoá/mở. Chỉ admin gọi được |
+| | `my_context()` | Hồ sơ người đang đăng nhập + các shop đang hoạt động mà họ thuộc về (kèm vai trò) |
+| | `mark_password_changed()` | Bỏ cờ "phải đổi mật khẩu tạm" sau khi người dùng đổi mật khẩu |
+| | `admin_list_shops()` | Danh sách shop kèm chủ shop và số shipper |
+| | `admin_create_shop(name, order_prefix, phone, address)` / `admin_update_shop(...)` | Tạo / sửa shop, kể cả tiền tố mã đơn và khoá/mở shop |
+| | `admin_set_shop_owner(shop_id, user_id, active)` | Gán hoặc bỏ chủ cửa hàng |
+| | `admin_list_accounts(account_type, query)` | Danh sách tài khoản, lọc theo loại, tìm không dấu, kèm các shop |
+| | `admin_db_usage()` | Dung lượng DB để theo dõi giới hạn 500 MB |
+| | `list_shop_members(shop_id)` | Chủ shop xem thành viên của shop (kể cả đã bỏ) |
+| | `search_shippers(shop_id, query)` | Chủ shop tìm trong danh sách shipper chung (chỉ trả về tên, SĐT, đã thuộc shop chưa) |
+| | `add_shop_shipper(shop_id, user_id)` / `remove_shop_shipper(...)` | Thêm/bỏ shipper (bỏ = đánh dấu không hoạt động để giữ lịch sử); ghi `audit_logs`. M5 bổ sung: chặn bỏ khi shipper đang có chuyến dở |
+| | `update_shop_info(shop_id, name, phone, address)` | Chủ shop sửa thông tin liên hệ của shop (tiền tố và trạng thái chỉ admin sửa) |
 | Sản phẩm & kho | `save_product(payload)` | Lưu sản phẩm + thuộc tính + ma trận biến thể trong 1 lần; không xoá biến thể đã có giao dịch (chuyển sang ngừng bán) |
 | | `receive_stock(payload)` | Lưu phiếu nhập + sổ kho |
 | | `apply_stocktake(payload)` | Lưu phiếu kiểm kho, ghi chênh lệch vào sổ kho |
@@ -798,8 +808,8 @@ Giả định: 1 người làm, khoảng 3–4 giờ/ngày, có AI hỗ trợ vi
 
 | GĐ | Nội dung | Thời lượng | Kết quả bàn giao | Hoàn thành khi | Cần có trước |
 |---|---|---|---|---|---|
-| **0** | Khởi tạo nền tảng | 4 ngày | Tài khoản Supabase / Cloudflare / ORS. Dự án Vite + React + TS, Tailwind, shadcn/ui, PWA, ESLint, Vitest, Playwright. Supabase CLI: migration đầu, nạp danh mục tỉnh/xã, sinh type TS. CI + deploy tự động + cron giữ DB thức | Mở link `*.pages.dev` trên điện thoại, cài được lên màn hình chính | — |
-| **1** | M0 Quản trị & 3 vai trò | 1 tuần | Bảng `shops` / `shop_members` / `profiles`, hàm RLS, Edge Function `admin-users`, đăng nhập SĐT, đổi mật khẩu lần đầu, chọn cửa hàng, màn Admin (A-01 → A-03), màn Shipper của shop (O-19), điều hướng theo vai trò, nhật ký thao tác | Admin tạo 2 shop + chủ shop + 2 shipper; 1 shipper thuộc 2 shop; **test tự động chứng minh shop A không đọc được dữ liệu shop B** | — |
+| **0** · 📝 có bản nháp, chờ duyệt | Khởi tạo nền tảng | 4 ngày | Tài khoản Supabase / Cloudflare / ORS. Dự án Vite + React + TS, Tailwind, shadcn/ui, PWA, ESLint, Vitest, Playwright. Supabase CLI: migration đầu, nạp danh mục tỉnh/xã, sinh type TS. CI + deploy tự động + cron giữ DB thức | Mở link `*.pages.dev` trên điện thoại, cài được lên màn hình chính | — |
+| **1** · 📝 có bản nháp, chờ duyệt | M0 Quản trị & 3 vai trò | 1 tuần | Bảng `shops` / `shop_members` / `profiles`, hàm RLS, Edge Function `admin-users`, đăng nhập SĐT, đổi mật khẩu lần đầu, chọn cửa hàng, màn Admin (A-01 → A-03), màn Shipper của shop (O-19), điều hướng theo vai trò, nhật ký thao tác | Admin tạo 2 shop + chủ shop + 2 shipper; 1 shipper thuộc 2 shop; **test tự động chứng minh shop A không đọc được dữ liệu shop B** | — |
 | **2** | M1 Sản phẩm (biến thể) & Kho | 1,5 tuần | Sản phẩm + thuộc tính + ma trận biến thể, sửa hàng loạt, ảnh, phiếu nhập & kiểm kho dạng lưới, thẻ kho, cảnh báo sắp hết, RPC kho + test SQL | Tạo SP 3 màu × 4 size, nhập kho lưới, kiểm kho, thẻ kho khớp tồn; test RPC đều qua | — |
 | **3** | M2 Khách hàng & địa chỉ | 1 tuần | CRUD khách, nhiều địa chỉ, smart paste, khớp tỉnh/xã + tên cũ, dán link Maps, chọn trên bản đồ, `MapProvider` (Cách B, thêm Cách A nếu chọn), chống trùng SĐT | Dán bộ tin nhắn mẫu, tách đúng ≥ 90% | **Q3** (Cách A/B), **Q6** (tin nhắn mẫu) |
 | **4** | M3 Đơn hàng | 1,5 tuần | Tạo / sửa / xác nhận / huỷ / mở lại / hoàn, chọn biến thể, danh sách + lọc + chọn nhiều, chi tiết + dòng thời gian, nhân bản, chia sẻ text | Tạo đơn khách cũ < 30 giây; huỷ/hoàn trả kho đúng từng biến thể; test E2E luồng đơn qua | — |
@@ -885,7 +895,8 @@ CI chạy lint, typecheck, unit test, test SQL và test phân quyền ở mỗi 
 | Q3 | Chọn **Cách A (Google, có khai báo thẻ)** hay **Cách B (không thẻ)** — xem [mục 3.3](#33-bản-đồ--địa-chỉ-2-cách-chờ-bạn-chọn-q3) | Bạn | Trước GĐ 3 (khoảng tuần 3) |
 | Q6 | Gửi file tin nhắn đặt hàng mẫu (10–20 tin, đã che thông tin) | Bạn | Trước GĐ 3 |
 | Q7 | Đổi repo sang riêng tư | Bạn | Trước khi nhập dữ liệu thật |
-| A1–A4 | Xác nhận các giả định về 3 vai trò ở [mục 0](#0-nhật-ký-quyết-định) | Bạn | Trước GĐ 1 |
+| ~~A1–A4~~ | ~~Xác nhận các giả định về 3 vai trò~~ — ✅ đã xác nhận 13/11/2026 | — | — |
+| Duyệt bản nháp | Quyết định có làm tiếp từ bản nháp GĐ 0–1 hay không ([mục 13](#13-tiến-độ-thực-hiện)) | Bạn | Trước khi viết thêm code |
 
 ---
 
@@ -901,3 +912,103 @@ CI chạy lint, typecheck, unit test, test SQL và test phân quyền ở mỗi 
 - Hướng dẫn tạo đơn / nhập Excel trên ViettelPost: <https://cellphones.com.vn/sforum/cach-tao-don-viettel-post>
 - Nhanh.vn — ghi chú hỗ trợ địa chỉ 2 cấp với các hãng vận chuyển: <https://pos.manual.nhanh.vn/pos/don-hang/quy-trinh-xu-ly-don/them-don-hang>
 - Danh sách xã/phường sau sáp nhập 2025 (34 tỉnh, 3.321 xã/phường): <https://ankapong.com/sap-nhap/tai-danh-sach/>
+
+---
+
+## 13. Tiến độ thực hiện
+
+> ⚠️ Code Giai đoạn 0–1 hiện là **bản nháp chưa được duyệt**.
+> Bản nháp được viết trước khi chủ dự án đồng ý bắt đầu code, và được lưu lại nguyên trạng ở commit `WIP (bản nháp, chưa duyệt)` để không bị mất. **Chỉ làm tiếp khi chủ dự án đồng ý.**
+> App **chưa chạy được** vì còn thiếu `src/main.tsx` và `src/App.tsx`.
+
+### 13.1 Phần đã viết (bản nháp)
+
+| Phần | File | Đã kiểm tra chưa |
+|---|---|---|
+| Khung dự án (GĐ 0) | `package.json`, `tsconfig*.json`, `eslint.config.js`, `.prettierrc.json`, `vite.config.ts` (PWA manifest), `vitest.config.ts` (2 nhóm test: unit / db), `index.html`, `public/` (icon đã sinh), `.env.example`, `.gitignore`, `pwa-assets.config.ts` | Đã cài thư viện; **chưa build / lint / kiểm tra kiểu** |
+| Cơ sở dữ liệu M0 | `supabase/migrations/20261113000100_m0_accounts_shops.sql`: 5 bảng (`profiles`, `shops`, `shop_members`, `system_settings`, `audit_logs`), hàm phân quyền, RLS, 13 RPC (xem [mục 4.3](#43-hàm-nghiệp-vụ-rpc-chạy-trong-transaction)) | Có test |
+| Cấu hình Supabase | `supabase/config.toml`: tắt tự đăng ký, mật khẩu ≥ 8 ký tự, `verify_jwt = false` cho `admin-users` | — |
+| Test DB | `supabase/tests/shim.sql` (giả lập phần auth của Supabase), `tests/db/*` | **28 test qua** trên Postgres 16: cô lập dữ liệu giữa shop, quyền của shipper, chặn ghi trực tiếp, chặn tự nâng quyền. Sau đó thêm `admin_db_usage` + 2 test, **chưa chạy lại** |
+| Edge Function | `supabase/functions/admin-users/` (tạo / sửa / đặt lại mật khẩu / khoá), `supabase/functions/_shared/vn-phone.ts` (dùng chung với web) | Qua `deno check` + `deno lint` |
+| Tạo admin đầu tiên | `scripts/create-admin.mjs` | Chưa chạy (cần project Supabase thật) |
+| Giao diện | `src/lib/*`, `src/app/*` (session, chọn shop, chặn quyền, layout theo vai trò), `src/components/*`. Các trang: Đăng nhập, Đổi mật khẩu, khối Tài khoản; Admin: Hệ thống (A-01), Cửa hàng (A-02), Tài khoản (A-03) | **Chưa kiểm tra kiểu, chưa chạy** |
+
+### 13.2 Phần còn dở
+
+1. **Trang còn thiếu**:
+   - Cài đặt admin.
+   - Tổng quan chủ shop (O-01, bản tạm).
+   - **Shipper của shop (O-19)**.
+   - Cài đặt shop (O-18, phần thông tin shop).
+   - Chuyến hôm nay của shipper (S-01, bản tạm) và trang Tài khoản của shipper.
+   - Trang "Sắp có" cho các module chưa làm.
+   - `src/App.tsx` (định tuyến), `src/main.tsx` (providers, toast).
+   - Màn "chưa cấu hình Supabase".
+2. **Sửa nhỏ**:
+   - `tsconfig.app.json` thêm `supabase/functions/_shared`.
+   - Thay emoji 📞 bằng icon trong `AdminShopsPage`.
+   - Kiểm tra icon `Share2` có trong lucide-react.
+3. **Kiểm tra**: typecheck, lint, unit test, chạy lại test DB, build, chụp màn hình ở khung điện thoại.
+4. **CI**: `.github/workflows/ci.yml` (lint, typecheck, unit, test DB với Postgres service, build) và `keepalive.yml` (ping Supabase mỗi 3 ngày).
+5. **`docs/SETUP.md`**:
+   - Tạo project Supabase (vùng Singapore), áp migration.
+   - Deploy function, đặt secret `LOGIN_EMAIL_DOMAIN`.
+   - Tạo admin đầu tiên.
+   - Kết nối Cloudflare Pages, đặt GitHub secrets.
+6. **Chủ dự án cần làm khi triển khai thật**: tạo tài khoản Supabase, Cloudflare, OpenRouteService.
+7. **Rủi ro chưa kiểm chứng**: Supabase Auth có nhận email nội bộ dạng `<sđt>@phone.smart-delivery.invalid` không. Nếu không, đổi tên miền qua biến môi trường (đã làm sẵn).
+
+---
+
+## 14. Quy ước kỹ thuật
+
+Rút ra khi viết bản nháp; áp dụng cho mọi phần làm sau.
+
+**Phiên bản đã chốt**
+
+| Thư viện | Phiên bản | Ghi chú |
+|---|---|---|
+| Node | ≥ 22 | |
+| React | 19.3 | |
+| Vite | 8 | |
+| Tailwind CSS | 4.3 | |
+| vite-plugin-pwa | 2.0 | |
+| @supabase/supabase-js | 2.119 | |
+| React Router | 7.18 | Chưa dùng v8 |
+| TypeScript | 6.0 | TS 7 chưa được typescript-eslint hỗ trợ |
+| Vitest | 5 | |
+| Supabase CLI | 3.1 | Dùng Postgres 17 |
+
+**Test cơ sở dữ liệu không cần Docker**
+- Dùng Postgres thường + `supabase/tests/shim.sql`, file này giả lập `auth.uid()` và các role `anon` / `authenticated` / `service_role` của Supabase.
+- Chạy: `DATABASE_URL=postgres://… npm run test:db`. Mỗi lần chạy tạo DB mới và áp toàn bộ migration.
+- CI dùng service Postgres của GitHub Actions.
+
+**Quy ước cho mọi migration**
+- Supabase mặc định cho `anon` quyền gọi mọi hàm, nên **mỗi migration phải thu hồi quyền rồi chỉ cấp lại cho `authenticated`**.
+- Bật RLS cho mọi bảng. Mọi thao tác ghi đi qua hàm `SECURITY DEFINER` có `set search_path = ''`; app không ghi bảng trực tiếp.
+- Mỗi bảng nghiệp vụ có `shop_id`. Kiểm tra quyền bằng `is_admin()` / `is_shop_owner()` / `can_manage_shop()`.
+- Thông báo lỗi viết bằng tiếng Việt để app hiển thị thẳng.
+- Mỗi migration mới phải kèm test phân quyền trong `tests/db/`.
+
+**Mã lỗi thống nhất**
+
+| Mã | Ý nghĩa |
+|---|---|
+| `42501` | Không có quyền |
+| `P0002` | Không tìm thấy |
+| `22023` | Dữ liệu sai |
+| `23505` | Trùng (VD tiền tố mã đơn, SĐT) |
+
+**Đăng nhập bằng SĐT**
+- Mỗi SĐT tương ứng một email nội bộ. Tên miền cấu hình bằng `VITE_LOGIN_EMAIL_DOMAIN` (web) và `LOGIN_EMAIL_DOMAIN` (function); hai giá trị phải giống nhau.
+- `admin-users` tự kiểm tra JWT và quyền admin.
+- Khoá tài khoản = cấm đăng nhập dài hạn + `profiles.active = false`. Các hàm phân quyền kiểm tra `active` nên khoá có hiệu lực ngay.
+- Mật khẩu tạm hiển thị một lần, có nút sao chép / chia sẻ; người dùng bắt buộc đổi ở lần đăng nhập đầu.
+- **Admin đầu tiên** tạo bằng `scripts/create-admin.mjs` (sinh mật khẩu tạm ngẫu nhiên).
+
+**Giao diện**
+- Bottom sheet dùng thẻ `<dialog>`.
+- Bộ màu sáng/tối theo cài đặt của máy, khai báo bằng biến CSS.
+- Component dùng chung: `Button`, `TextField` / `PasswordField` / `SelectField` / `SearchInput`, `Sheet`, `ConfirmSheet`, `PageHeader`, `AppShell` (thanh điều hướng dưới theo vai trò).
+- Lỗi từ Supabase được đổi sang tiếng Việt ở một chỗ (`src/lib/errors.ts`).

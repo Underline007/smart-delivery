@@ -4,4 +4,4 @@
 
 - Kế hoạch phát triển chi tiết: [docs/PLAN.md](docs/PLAN.md)
 
-Trạng thái: đang lập kế hoạch, chưa có code.
+Trạng thái: có bản nháp code giai đoạn 0–1, **chưa được duyệt** (xem [docs/PLAN.md mục 13](docs/PLAN.md#13-tiến-độ-thực-hiện)). App chưa chạy được.
