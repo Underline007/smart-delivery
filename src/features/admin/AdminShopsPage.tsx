@@ -43,7 +43,7 @@ function ShopFormSheet({
   const [active, setActive] = useState(shop?.active ?? true)
   const [errors, setErrors] = useState<Partial<Record<keyof ShopInput, string>>>({})
 
-  const save = useAction(
+  const save = useAction<void, unknown>(
     () => (shop ? adminUpdateShop(shop.id, { ...form, active }) : adminCreateShop(form)),
     {
       success: shop ? 'Đã lưu cửa hàng' : 'Đã tạo cửa hàng',
@@ -206,7 +206,7 @@ function ShopDetailSheet({
                 Sửa
               </Button>
             </div>
-            {shop.phone && <p className="text-sm">📞 {formatVnPhone(shop.phone)}</p>}
+            {shop.phone && <p className="text-sm">SĐT: {formatVnPhone(shop.phone)}</p>}
             {shop.address && <p className="text-sm text-muted">{shop.address}</p>}
             <p className="flex items-center gap-1.5 text-sm text-muted">
               <Truck className="size-4" /> {shop.shipper_count} shipper

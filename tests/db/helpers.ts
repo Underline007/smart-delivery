@@ -55,8 +55,6 @@ export async function sql<T = Record<string, unknown>>(
   return as(db, actor, async () => (await db.query(text, values)).rows as T[])
 }
 
-let phoneSeq = 0
-
 /** Creates an auth user + profile directly (what the admin-users function does). */
 export async function createAccount(
   db: Db,
@@ -64,8 +62,10 @@ export async function createAccount(
   fullName: string,
 ): Promise<string> {
   const id = randomUUID()
-  phoneSeq += 1
-  const phone = `09${String(10_000_000 + phoneSeq).slice(-8)}`
+  // Test files share one database, so numbers come from a database sequence.
+  await db.query('create sequence if not exists public.test_phone_seq')
+  const seq = (await db.query(`select nextval('public.test_phone_seq') as n`)).rows[0].n
+  const phone = `09${String(10_000_000 + Number(seq)).slice(-8)}`
   await db.query('insert into auth.users (id, email) values ($1, $2)', [
     id,
     `${phone}@test.invalid`,
@@ -88,7 +88,9 @@ export async function expectPgError(
   } catch (error) {
     if (!(error instanceof pg.DatabaseError)) throw error
     if (code && error.code !== code) {
-      throw new Error(`Expected SQLSTATE ${code}, got ${error.code}: ${error.message}`)
+      throw new Error(`Expected SQLSTATE ${code}, got ${error.code}: ${error.message}`, {
+        cause: error,
+      })
     }
     return error
   }

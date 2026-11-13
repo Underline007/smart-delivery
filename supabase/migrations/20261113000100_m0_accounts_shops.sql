@@ -262,7 +262,7 @@ as $$
   )
 $$;
 
-create or replace function public.write_audit(
+create or replace function public._write_audit(
   p_shop_id uuid,
   p_action text,
   p_target_type text,
@@ -437,7 +437,7 @@ begin
       using errcode = '23505';
   end;
 
-  perform public.write_audit(v_id, 'shop.create', 'shop', v_id::text,
+  perform public._write_audit(v_id, 'shop.create', 'shop', v_id::text,
                              jsonb_build_object('name', p_name));
   return v_id;
 end
@@ -478,7 +478,7 @@ begin
     raise exception 'Không tìm thấy cửa hàng' using errcode = 'P0002';
   end if;
 
-  perform public.write_audit(p_shop_id, 'shop.update', 'shop', p_shop_id::text,
+  perform public._write_audit(p_shop_id, 'shop.update', 'shop', p_shop_id::text,
                              jsonb_build_object('name', p_name, 'active', p_active));
 end
 $$;
@@ -513,7 +513,7 @@ begin
   on conflict (shop_id, user_id) do update
     set active = excluded.active, added_by = excluded.added_by;
 
-  perform public.write_audit(p_shop_id,
+  perform public._write_audit(p_shop_id,
                              case when p_active then 'shop.owner_add' else 'shop.owner_remove' end,
                              'profile', p_user_id::text);
 end
@@ -668,7 +668,7 @@ begin
   on conflict (shop_id, user_id) do update
     set active = true, added_by = excluded.added_by;
 
-  perform public.write_audit(p_shop_id, 'shop.shipper_add', 'profile', p_user_id::text);
+  perform public._write_audit(p_shop_id, 'shop.shipper_add', 'profile', p_user_id::text);
 end
 $$;
 
@@ -692,7 +692,7 @@ begin
     raise exception 'Shipper này không thuộc cửa hàng' using errcode = 'P0002';
   end if;
 
-  perform public.write_audit(p_shop_id, 'shop.shipper_remove', 'profile', p_user_id::text);
+  perform public._write_audit(p_shop_id, 'shop.shipper_remove', 'profile', p_user_id::text);
 end
 $$;
 
@@ -701,7 +701,9 @@ create or replace function public.update_shop_info(
   p_shop_id uuid,
   p_name text,
   p_phone text,
-  p_address text
+  p_address text,
+  p_lat double precision default null,
+  p_lng double precision default null
 )
 returns void
 language plpgsql
@@ -712,47 +714,58 @@ begin
   if not public.can_manage_shop(p_shop_id) then
     raise exception 'Bạn không có quyền quản lý cửa hàng này' using errcode = '42501';
   end if;
+  if btrim(coalesce(p_name, '')) = '' then
+    raise exception 'Nhập tên cửa hàng' using errcode = '22023';
+  end if;
 
   update public.shops
   set name = btrim(p_name),
       phone = nullif(btrim(p_phone), ''),
-      address = nullif(btrim(p_address), '')
+      address = nullif(btrim(p_address), ''),
+      lat = p_lat,
+      lng = p_lng
   where id = p_shop_id;
 
-  perform public.write_audit(p_shop_id, 'shop.update_info', 'shop', p_shop_id::text,
-                             jsonb_build_object('name', p_name));
+  perform public._write_audit(p_shop_id, 'shop.update_info', 'shop', p_shop_id::text,
+                              jsonb_build_object('name', p_name));
 end
 $$;
 
 -- ---------------------------------------------------------------------
--- Function privileges
---   Supabase grants EXECUTE on new functions to anon by default, so
---   revoke explicitly and grant only what the app needs.
+-- Privileges
+--   Supabase grants EXECUTE on new functions and ALL on new tables to anon /
+--   authenticated by default. _apply_grants() resets that and is called at the
+--   end of EVERY migration:
+--     * functions: callable by `authenticated` unless the name starts with
+--       "_" or "tg_" (internal helpers / triggers); never by `anon`
+--     * tables: `authenticated` may only SELECT (RLS filters rows); every
+--       write goes through a SECURITY DEFINER function
 -- ---------------------------------------------------------------------
 
-revoke execute on all functions in schema public from public, anon, authenticated;
+create or replace function public._apply_grants()
+returns void
+language plpgsql
+set search_path = ''
+as $$
+declare
+  r record;
+begin
+  for r in
+    select p.oid::regprocedure::text as sig, p.proname
+    from pg_proc p
+    join pg_namespace n on n.oid = p.pronamespace
+    where n.nspname = 'public' and p.prokind = 'f'
+  loop
+    execute format('revoke execute on function %s from public, anon, authenticated', r.sig);
+    if r.proname not like '\_%' and r.proname not like 'tg\_%' then
+      execute format('grant execute on function %s to authenticated', r.sig);
+    end if;
+    execute format('grant execute on function %s to service_role', r.sig);
+  end loop;
 
-grant execute on function
-  public.vn_search_key(text),
-  public.normalize_vn_mobile(text),
-  public.is_admin(),
-  public.is_shop_owner(uuid),
-  public.is_shop_member(uuid),
-  public.can_manage_shop(uuid),
-  public.owns_shop_of(uuid),
-  public.my_context(),
-  public.mark_password_changed(),
-  public.admin_list_shops(),
-  public.admin_create_shop(text, text, text, text),
-  public.admin_update_shop(uuid, text, text, text, text, boolean),
-  public.admin_set_shop_owner(uuid, uuid, boolean),
-  public.admin_db_usage(),
-  public.admin_list_accounts(public.account_type, text),
-  public.list_shop_members(uuid),
-  public.search_shippers(uuid, text),
-  public.add_shop_shipper(uuid, uuid),
-  public.remove_shop_shipper(uuid, uuid),
-  public.update_shop_info(uuid, text, text, text)
-to authenticated;
+  revoke all on all tables in schema public from anon, authenticated;
+  grant select on all tables in schema public to authenticated;
+end
+$$;
 
-grant execute on all functions in schema public to service_role;
+select public._apply_grants();

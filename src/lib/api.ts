@@ -9,6 +9,7 @@ import type {
   ShipperSearchResult,
   Shop,
   ShopMember,
+  ShopSettings,
 } from './types'
 import { phoneToLoginEmail } from './vn/phone'
 
@@ -135,7 +136,7 @@ export async function fetchShop(shopId: string): Promise<Shop | null> {
   return unwrap(
     await supabase
       .from('shops')
-      .select('id, name, phone, address, order_prefix, active')
+      .select('id, name, phone, address, lat, lng, order_prefix, active')
       .eq('id', shopId)
       .maybeSingle(),
   ) as Shop | null
@@ -143,7 +144,7 @@ export async function fetchShop(shopId: string): Promise<Shop | null> {
 
 export async function updateShopInfo(
   shopId: string,
-  input: { name: string; phone: string; address: string },
+  input: { name: string; phone: string; address: string; lat: number | null; lng: number | null },
 ) {
   unwrap(
     await supabase.rpc('update_shop_info', {
@@ -151,8 +152,22 @@ export async function updateShopInfo(
       p_name: input.name,
       p_phone: input.phone,
       p_address: input.address,
+      p_lat: input.lat,
+      p_lng: input.lng,
     }),
   )
+}
+
+export async function fetchShopSettings(shopId: string): Promise<ShopSettings> {
+  const row = unwrap(
+    await supabase.from('shop_settings').select('*').eq('shop_id', shopId).maybeSingle(),
+  ) as ShopSettings | null
+  if (!row) throw new Error('Không tìm thấy cài đặt của cửa hàng')
+  return row
+}
+
+export async function saveShopSettings(shopId: string, settings: Partial<ShopSettings>) {
+  unwrap(await supabase.rpc('save_shop_settings', { p_shop_id: shopId, p_settings: settings }))
 }
 
 export async function listShopMembers(shopId: string): Promise<ShopMember[]> {
@@ -174,4 +189,43 @@ export async function addShopShipper(shopId: string, userId: string) {
 
 export async function removeShopShipper(shopId: string, userId: string) {
   unwrap(await supabase.rpc('remove_shop_shipper', { p_shop_id: shopId, p_user_id: userId }))
+}
+
+// ---------------------------------------------------------------- system
+
+export interface SystemSettings {
+  map_provider: 'osm' | 'google'
+  vtp_template_name: string | null
+  vtp_template_version: string | null
+}
+
+export async function fetchSystemSettings(): Promise<SystemSettings> {
+  return unwrap(
+    await supabase
+      .from('system_settings')
+      .select('map_provider, vtp_template_name, vtp_template_version')
+      .eq('id', 1)
+      .single(),
+  ) as SystemSettings
+}
+
+export async function saveSystemSettings(settings: Partial<SystemSettings>) {
+  unwrap(await supabase.rpc('admin_save_system_settings', { p_settings: settings }))
+}
+
+export interface AuditRow {
+  id: number
+  created_at: string
+  action: string
+  target_type: string | null
+  target_id: string | null
+  data: Record<string, unknown>
+  actor_name: string | null
+  shop_name: string | null
+}
+
+export async function adminListAudit(before?: number): Promise<AuditRow[]> {
+  return unwrap(
+    await supabase.rpc('admin_list_audit', { p_limit: 50, p_before: before ?? null }),
+  ) as AuditRow[]
 }

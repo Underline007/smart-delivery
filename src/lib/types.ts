@@ -33,11 +33,23 @@ export interface Shop {
   name: string
   phone: string | null
   address: string | null
+  lat: number | null
+  lng: number | null
   order_prefix: string
   active: boolean
 }
 
-export interface AdminShop extends Shop {
+export interface ShopSettings {
+  shop_id: string
+  vtp_service: string
+  vtp_fee_payer: 'sender' | 'receiver'
+  vtp_delivery_requirement: 'no_view' | 'view' | 'try'
+  packaging_weight_g: number
+  allow_negative_stock: boolean
+  message_template: string
+}
+
+export interface AdminShop extends Omit<Shop, 'lat' | 'lng'> {
   created_at: string
   owners: { id: string; full_name: string; phone: string }[]
   shipper_count: number

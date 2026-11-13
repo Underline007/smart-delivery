@@ -76,10 +76,10 @@ describe('text helpers', () => {
 })
 
 describe('anonymous access', () => {
-  it('sees no rows', async () => {
-    expect(await sql(db, null, 'select * from public.profiles')).toHaveLength(0)
-    expect(await sql(db, null, 'select * from public.shops')).toHaveLength(0)
-    expect(await sql(db, null, 'select * from public.shop_members')).toHaveLength(0)
+  it('cannot read any table', async () => {
+    for (const table of ['profiles', 'shops', 'shop_members', 'audit_logs', 'system_settings']) {
+      await expectPgError(sql(db, null, `select * from public.${table}`), '42501')
+    }
   })
 
   it('cannot call RPCs', async () => {
@@ -274,15 +274,25 @@ describe('direct writes are blocked', () => {
   })
 
   it('cannot promote itself to admin', async () => {
-    const rows = await sql(
-      db,
-      owner1,
-      `update public.profiles set account_type = 'admin' where id = $1 returning id`,
-      [owner1],
+    await expectPgError(
+      sql(db, owner1, `update public.profiles set account_type = 'admin' where id = $1`, [owner1]),
+      '42501',
     )
-    expect(rows).toHaveLength(0)
     const [ctx] = await rpc<{ my_context: Context }>(db, owner1, 'my_context')
     expect(ctx.my_context.profile.account_type).toBe('owner')
+  })
+
+  it('cannot call internal helpers', async () => {
+    await expectPgError(
+      rpc(db, owner1, '_write_audit', {
+        p_shop_id: shop1,
+        p_action: 'fake',
+        p_target_type: null,
+        p_target_id: null,
+      }),
+      '42501',
+    )
+    await expectPgError(rpc(db, admin, '_apply_grants'), '42501')
   })
 
   it('cannot create shops directly', async () => {
