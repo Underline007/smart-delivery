@@ -1,5 +1,6 @@
 import { randomUUID } from 'node:crypto'
 import pg from 'pg'
+import { inject } from 'vitest'
 
 export type Db = pg.Client
 
@@ -7,6 +8,38 @@ export async function connect(url: string): Promise<Db> {
   const client = new pg.Client({ connectionString: url })
   await client.connect()
   return client
+}
+
+const dbNames = new WeakMap<Db, string>()
+
+/** A private database for one test file, cloned from the migrated template. */
+export async function createTestDb(): Promise<Db> {
+  const adminUrl = inject('adminDbUrl')
+  const name = `sd_test_${randomUUID().replace(/-/g, '').slice(0, 12)}`
+  const admin = await connect(adminUrl)
+  try {
+    await admin.query(`create database ${name} template ${inject('templateDb')}`)
+  } finally {
+    await admin.end()
+  }
+  const url = new URL(adminUrl)
+  url.pathname = `/${name}`
+  const client = await connect(url.toString())
+  dbNames.set(client, name)
+  return client
+}
+
+export async function dropTestDb(db: Db | undefined): Promise<void> {
+  if (!db) return
+  const name = dbNames.get(db)
+  await db.end()
+  if (!name) return
+  const admin = await connect(inject('adminDbUrl'))
+  try {
+    await admin.query(`drop database if exists ${name} with (force)`)
+  } finally {
+    await admin.end()
+  }
 }
 
 /** Who runs the query: `null` means not signed in (anon). */
@@ -40,7 +73,11 @@ export async function rpc<T = Record<string, unknown>>(
   const names = Object.keys(args)
   const params = names.map((name, i) => `${name} => $${i + 1}`).join(', ')
   return as(db, actor, async () => {
-    const res = await db.query(`select * from public.${fn}(${params})`, Object.values(args))
+    // node-postgres turns JS arrays into Postgres arrays; arrays of objects are JSON.
+    const values = Object.values(args).map((v) =>
+      Array.isArray(v) && v.some((x) => typeof x === 'object' && x !== null) ? JSON.stringify(v) : v,
+    )
+    const res = await db.query(`select * from public.${fn}(${params})`, values)
     return res.rows as T[]
   })
 }

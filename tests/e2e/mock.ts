@@ -2,11 +2,15 @@ import type { Page, Route } from '@playwright/test'
 
 export type Handler = (body: unknown, url: URL) => unknown | Promise<unknown>
 
+type Json = Record<string, unknown> | unknown[] | null
+
 export interface MockOptions {
   /** RPC name → response body (or function of the request body). */
   rpc?: Record<string, unknown | Handler>
   /** Table name → response body for GET /rest/v1/<table>. */
   tables?: Record<string, unknown | Handler>
+  /** Table name → row count answered to HEAD requests (select with count). */
+  counts?: Record<string, number>
 }
 
 export const USER_ID = '11111111-1111-4111-8111-111111111111'
@@ -32,14 +36,22 @@ export async function signedIn(page: Page) {
   }, session)
 }
 
-async function respond(route: Route, value: unknown, body: unknown, url: URL) {
-  const data = typeof value === 'function' ? await (value as Handler)(body, url) : value
-  await route.fulfill({
-    status: 200,
-    contentType: 'application/json',
-    headers: { 'access-control-allow-origin': '*' },
-    body: JSON.stringify(data),
-  })
+async function respond(route: Route, value: unknown, body: unknown, url: URL, wantsObject = false) {
+  const data = (typeof value === 'function' ? await (value as Handler)(body, url) : value) as Json
+  const headers = { 'access-control-allow-origin': '*' }
+  if (wantsObject && Array.isArray(data)) {
+    // supabase-js .single()/.maybeSingle(): one object, or 406 when there is none.
+    if (data.length === 0) {
+      return route.fulfill({
+        status: 406,
+        contentType: 'application/json',
+        headers,
+        body: JSON.stringify({ code: 'PGRST116', details: 'The result contains 0 rows', message: 'JSON object requested, multiple (or no) rows returned' }),
+      })
+    }
+    return route.fulfill({ status: 200, contentType: 'application/json', headers, body: JSON.stringify(data[0]) })
+  }
+  await route.fulfill({ status: 200, contentType: 'application/json', headers, body: JSON.stringify(data) })
 }
 
 /** Mocks the Supabase REST API. Unknown RPCs and tables answer 404 so tests fail loudly. */
@@ -71,8 +83,19 @@ export async function mockSupabase(page: Page, options: MockOptions = {}) {
       return respond(route, options.rpc[rpc], body, url)
     }
     const table = url.pathname.match(/^\/rest\/v1\/([^/]+)$/)?.[1]
+    if (table && request.method() === 'HEAD') {
+      return route.fulfill({
+        status: 200,
+        headers: {
+          'access-control-allow-origin': '*',
+          'access-control-expose-headers': 'content-range',
+          'content-range': `*/${options.counts?.[table] ?? 0}`,
+        },
+      })
+    }
     if (table && options.tables && table in options.tables) {
-      return respond(route, options.tables[table], body, url)
+      const wantsObject = (request.headers()['accept'] ?? '').includes('vnd.pgrst.object')
+      return respond(route, options.tables[table], body, url, wantsObject)
     }
 
     return route.fulfill({

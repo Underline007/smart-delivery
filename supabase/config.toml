@@ -430,3 +430,7 @@ enabled = true
 # that the caller is an active admin.
 [functions.admin-users]
 verify_jwt = false
+
+# Resolves short Google Maps links; checks the caller's JWT itself.
+[functions.resolve-map-link]
+verify_jwt = false

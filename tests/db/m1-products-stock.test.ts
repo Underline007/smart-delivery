@@ -1,5 +1,5 @@
-import { afterAll, beforeAll, describe, expect, inject, it } from 'vitest'
-import { connect, createAccount, expectPgError, rpc, sql, type Db } from './helpers'
+import { afterAll, beforeAll, describe, expect, it } from 'vitest'
+import { createAccount, createTestDb, dropTestDb, expectPgError, rpc, sql, type Db } from './helpers'
 
 interface Variant {
   id: string
@@ -61,7 +61,7 @@ async function stockOf(variantId: string): Promise<number> {
 }
 
 beforeAll(async () => {
-  db = await connect(inject('testDbUrl'))
+  db = await createTestDb()
   admin = await createAccount(db, 'admin', 'Quản Trị M1')
   owner1 = await createAccount(db, 'owner', 'Chủ Một M1')
   owner2 = await createAccount(db, 'owner', 'Chủ Hai M1')
@@ -93,7 +93,7 @@ beforeAll(async () => {
 })
 
 afterAll(async () => {
-  await db?.end()
+  await dropTestDb(db)
 })
 
 describe('shop settings', () => {

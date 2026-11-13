@@ -3,11 +3,14 @@ import { join } from 'node:path'
 import pg from 'pg'
 import type { TestProject } from 'vitest/node'
 
-const TEST_DB = 'smart_delivery_test'
+const TEMPLATE_DB = 'smart_delivery_template'
 
 declare module 'vitest' {
   export interface ProvidedContext {
-    testDbUrl: string
+    /** Connection string of a maintenance database (used to create/drop per-file databases). */
+    adminDbUrl: string
+    /** Database holding the shim and all migrations; per-file databases are cloned from it. */
+    templateDb: string
   }
 }
 
@@ -28,12 +31,12 @@ export default async function setup(project: TestProject) {
 
   const admin = new pg.Client({ connectionString: adminUrl })
   await admin.connect()
-  await admin.query(`drop database if exists ${TEST_DB} with (force)`)
-  await admin.query(`create database ${TEST_DB}`)
+  await admin.query(`drop database if exists ${TEMPLATE_DB} with (force)`)
+  await admin.query(`create database ${TEMPLATE_DB}`)
   await admin.end()
 
   const url = new URL(adminUrl)
-  url.pathname = `/${TEST_DB}`
+  url.pathname = `/${TEMPLATE_DB}`
   const testDbUrl = url.toString()
 
   const db = new pg.Client({ connectionString: testDbUrl })
@@ -55,5 +58,6 @@ export default async function setup(project: TestProject) {
     await db.end()
   }
 
-  project.provide('testDbUrl', testDbUrl)
+  project.provide('adminDbUrl', adminUrl)
+  project.provide('templateDb', TEMPLATE_DB)
 }

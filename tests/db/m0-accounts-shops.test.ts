@@ -1,5 +1,5 @@
-import { afterAll, beforeAll, describe, expect, inject, it } from 'vitest'
-import { connect, createAccount, expectPgError, rpc, sql, type Db } from './helpers'
+import { afterAll, beforeAll, describe, expect, it } from 'vitest'
+import { createAccount, createTestDb, dropTestDb, expectPgError, rpc, sql, type Db } from './helpers'
 
 type Context = {
   profile: { id: string; account_type: string; must_change_password: boolean }
@@ -21,7 +21,7 @@ async function context(actor: string): Promise<Context | null> {
 }
 
 beforeAll(async () => {
-  db = await connect(inject('testDbUrl'))
+  db = await createTestDb()
 
   admin = await createAccount(db, 'admin', 'Quản Trị')
   owner1 = await createAccount(db, 'owner', 'Chủ Shop Một')
@@ -49,7 +49,7 @@ beforeAll(async () => {
 })
 
 afterAll(async () => {
-  await db?.end()
+  await dropTestDb(db)
 })
 
 describe('text helpers', () => {

@@ -14,10 +14,13 @@ import { SetupNeeded } from '@/app/SetupNeeded'
 import { ComingSoon } from '@/components/ui/ComingSoon'
 import { LoadingBlock } from '@/components/ui/misc'
 import { AdminAccountsPage } from '@/features/admin/AdminAccountsPage'
+import { AdminCatalogPage } from '@/features/admin/AdminCatalogPage'
 import { AdminAuditPage } from '@/features/admin/AdminAuditPage'
 import { AdminHomePage } from '@/features/admin/AdminHomePage'
 import { AdminSettingsPage } from '@/features/admin/AdminSettingsPage'
 import { AdminShopsPage } from '@/features/admin/AdminShopsPage'
+import { CustomerDetailPage } from '@/features/customers/CustomerDetailPage'
+import { CustomersPage } from '@/features/customers/CustomersPage'
 import { ChangePasswordPage } from '@/features/auth/ChangePasswordPage'
 import { LoginPage } from '@/features/auth/LoginPage'
 import { HistoryPage } from '@/features/products/HistoryPage'
@@ -69,6 +72,7 @@ export function App() {
                   <Route path="accounts" element={<AdminAccountsPage />} />
                   <Route path="settings" element={<AdminSettingsPage />} />
                   <Route path="audit" element={<AdminAuditPage />} />
+                  <Route path="catalog" element={<AdminCatalogPage />} />
                 </Route>
 
                 <Route
@@ -91,7 +95,8 @@ export function App() {
                   <Route path="inventory/stocktake" element={<StocktakePage />} />
                   <Route path="inventory/stock-card/:variantId" element={<StockCardPage />} />
                   <Route path="inventory/history" element={<HistoryPage />} />
-                  <Route path="customers" element={<ComingSoon title="Khách hàng" />} />
+                  <Route path="customers" element={<CustomersPage />} />
+                  <Route path="customers/:customerId" element={<CustomerDetailPage />} />
                   <Route path="reports" element={<ComingSoon title="Báo cáo" />} />
                   <Route path="settings" element={<ShopSettingsPage />} />
                   <Route path="settings/shippers" element={<ShopShippersPage />} />

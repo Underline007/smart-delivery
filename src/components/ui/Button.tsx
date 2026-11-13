@@ -44,11 +44,12 @@ export function Button({
       type={type}
       disabled={disabled || loading}
       className={cn(
-        'inline-flex shrink-0 items-center justify-center rounded-xl font-semibold transition select-none',
+        'inline-flex items-center justify-center rounded-xl font-semibold transition select-none',
+        // Full-width buttons share a row equally; other buttons keep their size.
+        block ? 'w-full min-w-0 shrink' : 'shrink-0',
         'disabled:pointer-events-none disabled:opacity-50',
         variants[variant],
         sizes[size],
-        block && 'w-full',
         className,
       )}
       {...props}
