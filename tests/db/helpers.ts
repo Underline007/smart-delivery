@@ -11,6 +11,7 @@ export async function connect(url: string): Promise<Db> {
 }
 
 const dbNames = new WeakMap<Db, string>()
+const dbUrls = new WeakMap<Db, string>()
 
 /** A private database for one test file, cloned from the migrated template. */
 export async function createTestDb(): Promise<Db> {
@@ -26,7 +27,13 @@ export async function createTestDb(): Promise<Db> {
   url.pathname = `/${name}`
   const client = await connect(url.toString())
   dbNames.set(client, name)
+  dbUrls.set(client, url.toString())
   return client
+}
+
+/** A second connection to the same test database (for concurrency tests). */
+export async function openAnotherConnection(db: Db): Promise<Db> {
+  return connect(dbUrls.get(db)!)
 }
 
 export async function dropTestDb(db: Db | undefined): Promise<void> {

@@ -29,6 +29,9 @@ import { ProductFormPage } from '@/features/products/ProductFormPage'
 import { ReceiptPage } from '@/features/products/ReceiptPage'
 import { StockCardPage } from '@/features/products/StockCardPage'
 import { StocktakePage } from '@/features/products/StocktakePage'
+import { OrderDetailPage } from '@/features/orders/OrderDetailPage'
+import { OrderFormPage } from '@/features/orders/OrderFormPage'
+import { OrdersPage } from '@/features/orders/OrdersPage'
 import { ShopSettingsPage } from '@/features/shop/ShopSettingsPage'
 import { ShopShippersPage } from '@/features/shop/ShopShippersPage'
 import { isConfigured } from '@/lib/env'
@@ -86,8 +89,10 @@ export function App() {
                   }
                 >
                   <Route index element={<ComingSoon title="Tổng quan" />} />
-                  <Route path="orders" element={<ComingSoon title="Đơn hàng" />} />
-                  <Route path="orders/new" element={<ComingSoon title="Tạo đơn" />} />
+                  <Route path="orders" element={<OrdersPage />} />
+                  <Route path="orders/new" element={<OrderFormPage />} />
+                  <Route path="orders/:orderId" element={<OrderDetailPage />} />
+                  <Route path="orders/:orderId/edit" element={<OrderFormPage />} />
                   <Route path="inventory" element={<InventoryPage />} />
                   <Route path="inventory/products/new" element={<ProductFormPage />} />
                   <Route path="inventory/products/:productId" element={<ProductFormPage />} />
