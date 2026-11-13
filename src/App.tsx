@@ -15,6 +15,9 @@ import { ComingSoon } from '@/components/ui/ComingSoon'
 import { LoadingBlock } from '@/components/ui/misc'
 import { AdminAccountsPage } from '@/features/admin/AdminAccountsPage'
 import { AdminCatalogPage } from '@/features/admin/AdminCatalogPage'
+import { AdminVtpTemplatePage } from '@/features/vtp/AdminVtpTemplatePage'
+import { VtpExportPage } from '@/features/vtp/VtpExportPage'
+import { VtpTrackingPage } from '@/features/vtp/VtpTrackingPage'
 import { AdminAuditPage } from '@/features/admin/AdminAuditPage'
 import { AdminHomePage } from '@/features/admin/AdminHomePage'
 import { AdminSettingsPage } from '@/features/admin/AdminSettingsPage'
@@ -76,6 +79,7 @@ export function App() {
                   <Route path="settings" element={<AdminSettingsPage />} />
                   <Route path="audit" element={<AdminAuditPage />} />
                   <Route path="catalog" element={<AdminCatalogPage />} />
+                  <Route path="vtp-template" element={<AdminVtpTemplatePage />} />
                 </Route>
 
                 <Route
@@ -102,6 +106,8 @@ export function App() {
                   <Route path="inventory/history" element={<HistoryPage />} />
                   <Route path="customers" element={<CustomersPage />} />
                   <Route path="customers/:customerId" element={<CustomerDetailPage />} />
+                  <Route path="vtp/export" element={<VtpExportPage />} />
+                  <Route path="vtp/tracking" element={<VtpTrackingPage />} />
                   <Route path="reports" element={<ComingSoon title="Báo cáo" />} />
                   <Route path="settings" element={<ShopSettingsPage />} />
                   <Route path="settings/shippers" element={<ShopShippersPage />} />
