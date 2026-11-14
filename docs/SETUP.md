@@ -120,7 +120,7 @@ age-keygen -o backup-key.txt     # cài age: https://github.com/FiloSottile/age
 | Workflow | Chạy khi | Việc làm |
 |---|---|---|
 | `ci.yml` | mỗi lần push / PR | lint, kiểm tra kiểu, test đơn vị, test DB, test giao diện điện thoại, build |
-| `keepalive.yml` | 3 ngày một lần | gọi `keepalive()` để Supabase miễn phí không bị tạm dừng |
+| `keepalive.yml` | 2 lần mỗi ngày | gọi `keepalive()` (ghi 1 dòng nhịp tim) rồi **kiểm tra kết quả**; hỏng thì báo lỗi. Xem mục “Giữ Supabase không bị tạm dừng” |
 | `backup.yml` | Chủ nhật hằng tuần | sao lưu DB, mã hoá, giữ 90 ngày (Actions → chạy → tải artifact) |
 | `cleanup.yml` | hằng ngày | xoá ảnh bằng chứng giao hàng quá 30 ngày |
 
@@ -132,6 +132,55 @@ psql "<chuỗi kết nối DB của project mới>" -f public.sql
 ```
 
 (Chạy migration ở mục 3 cho project trống trước, hoặc khôi phục vào project trống rồi tạo lại tài khoản đăng nhập từ file `auth`.) Nên thử khôi phục vào một project Supabase trống **mỗi quý** để chắc chắn bản sao lưu dùng được.
+
+## Giữ Supabase không bị tạm dừng
+
+**Vấn đề:** gói miễn phí của Supabase **tạm dừng project sau khoảng 1 tuần không có hoạt động**. Project bị dừng thì app không vào được cho tới khi admin bấm *Restore*. Với một app cá nhân dùng đều thì ít gặp, nhưng khi nghỉ vài ngày (Tết, đi xa…) thì rất dễ xảy ra, nên app có nhiều lớp phòng ngừa.
+
+> **Không có lớp nào bảo đảm 100%.** Supabase không công bố chính xác thế nào là “hoạt động”. Cách làm dưới đây (gọi API **và ghi** vào database, nhiều nơi, nhiều lần mỗi ngày) là cách phổ biến và hợp lý nhất, nhưng bạn vẫn nên coi thẻ cảnh báo trong app và bản sao lưu là lưới an toàn cuối cùng.
+
+### Các lớp bảo vệ
+
+| Lớp | Việc làm | Bạn cần làm |
+|---|---|---|
+| 1. **Dùng app hằng ngày** | Mỗi lần ai đó mở app là có hoạt động thật | — |
+| 2. **GitHub Actions** (`keepalive.yml`) | 2 lần/ngày gọi `keepalive()`, hàm này **ghi** 1 dòng “nhịp tim” (tối đa 1 lần/giờ, không ai lạm dụng được). Sau đó workflow **kiểm tra** nhịp tim còn mới, nếu không thì **báo lỗi và GitHub gửi email** | Đặt 2 secret `SUPABASE_URL`, `SUPABASE_PUBLISHABLE_KEY` (mục 7) |
+| 3. **Cloudflare Worker** (`workers/keepalive`) | Một bộ gọi **thứ hai, độc lập** với GitHub, 2 lần/ngày. Một bên hỏng thì bên kia vẫn chạy | Làm các bước bên dưới (khoảng 5 phút) |
+| 4. **Thẻ cảnh báo cho admin** | Trang **Hệ thống** hiện “lần gọi gần nhất”: xanh (dưới 36 giờ), vàng (các lần gọi đã dừng), **đỏ (từ 5 ngày: sắp bị dừng)** | Mở trang này thỉnh thoảng |
+| 5. **Sao lưu hằng tuần** (`backup.yml`) | Dù chuyện gì xảy ra, dữ liệu vẫn có bản mã hoá trong 90 ngày | Mục 7 |
+| 6. **Màn hình báo lỗi rõ ràng** | Không vào được app thì màn đăng nhập giải thích có thể project bị dừng và cách xử lý | — |
+
+### Cài Cloudflare Worker (lớp 3)
+
+Cần tài khoản Cloudflare (đã có ở mục 6) và Node.js:
+
+```bash
+cd workers/keepalive
+npx wrangler login
+npx wrangler secret put SUPABASE_URL              # dán Project URL
+npx wrangler secret put SUPABASE_PUBLISHABLE_KEY  # dán publishable key
+npx wrangler deploy
+```
+
+Kiểm tra: mở địa chỉ `https://smart-delivery-keepalive.<tài khoản>.workers.dev` trên trình duyệt, thấy `{"ok":true,"heartbeat":{…}}` là chạy. Cron chạy lúc 09:41 và 21:41 UTC mỗi ngày (Cloudflare → Workers → *smart-delivery-keepalive* → Triggers).
+
+### Những điểm yếu cần biết
+
+- **Repo công khai thì GitHub tự tắt workflow định kỳ** sau 60 ngày không có hoạt động trên repo. Giữ repo **riêng tư** (đã khuyên ở mục 1) hoặc thỉnh thoảng bấm *Run workflow*.
+- GitHub có thể chạy workflow **trễ** vào giờ cao điểm; vì vậy chạy 2 lần/ngày và có Worker song song.
+- Email báo lỗi của GitHub gửi cho người cập nhật workflow gần nhất. Kiểm tra mục Notifications của GitHub nếu bạn không thấy mail.
+- Hai bộ gọi dùng **publishable key** (khoá công khai), không dùng `service_role`.
+
+### Nếu project đã bị tạm dừng
+
+1. Vào supabase.com → chọn project → bấm **Restore project**. Chờ vài phút. **Dữ liệu không mất.**
+2. Theo tài liệu Supabase tại thời điểm viết, project tạm dừng **khôi phục được trong khoảng 90 ngày**; sau đó chỉ còn tải được bản sao lưu. Hãy tra lại trang chính sách hiện hành của Supabase.
+3. Quá hạn khôi phục: tạo project mới, chạy lại các migration (mục 3), khôi phục bản sao lưu (mục 7), tạo lại tài khoản bằng file sao lưu `auth`.
+4. Tìm nguyên nhân: workflow `keepalive` có xanh không? Worker có chạy không? Repo có bị tắt workflow không?
+
+### Phương án cuối cùng
+
+Nếu việc bị tạm dừng gây thiệt hại thật cho việc bán hàng, nâng project lên gói **Pro (khoảng 25 USD/tháng)** là cách duy nhất loại bỏ hẳn việc tạm dừng. Đó là lúc kế hoạch “hạ tầng 0đ” không còn đủ, và là quyết định của bạn.
 
 ## 8. Kiểm tra sau khi cài đặt
 
@@ -146,7 +195,8 @@ Làm lần lượt, tick từng mục:
 - [ ] Đăng nhập bằng shipper (trình duyệt khác hoặc cửa sổ ẩn danh): **không** thấy giá vốn hay doanh thu.
 - [ ] Admin: **Cài đặt → Danh mục tỉnh / xã** → nhập file phường/xã (CSV). **Cài đặt → Mẫu Excel ViettelPost** → tải file mẫu thật lên và chọn cột (xem [mục 10](#10-chuẩn-bị-dữ-liệu-cho-viettelpost)).
 - [ ] Trên điện thoại: bấm **Cài đặt / Thêm vào màn hình chính** để cài app. Thử chụp ảnh khi giao hàng và mở **Dẫn đường**.
-- [ ] Actions → chạy tay `keepalive` và `backup` một lần, thấy xanh.
+- [ ] Actions → chạy tay `keepalive` và `backup` một lần, thấy xanh. Tải lại trang **Hệ thống** của admin: thẻ “Giữ Supabase không bị tạm dừng” báo xanh.
+- [ ] (Khuyên làm) Cài thêm Cloudflare Worker `keepalive` làm lớp bảo vệ thứ hai (mục dưới).
 
 ## 9. Google Maps (tuỳ chọn)
 
@@ -183,7 +233,7 @@ Con số có thể thay đổi, hãy tra lại trang giá của từng dịch v�
 | Màn hình “Chưa cấu hình kết nối” | Chưa đặt `VITE_SUPABASE_URL` / `VITE_SUPABASE_PUBLISHABLE_KEY` trong Cloudflare, sau đó phải deploy lại |
 | Admin tạo tài khoản báo “email không hợp lệ” | Supabase từ chối tên miền `.invalid`. Đặt `LOGIN_EMAIL_DOMAIN` (function) **và** `VITE_LOGIN_EMAIL_DOMAIN` (Cloudflare) cùng một tên miền khác, ví dụ tên miền bạn sở hữu. Email này không bao giờ gửi thư. Tài khoản đã tạo trước đó phải tạo lại |
 | “Sai số điện thoại hoặc mật khẩu” dù đúng | Hai biến tên miền ở trên không khớp nhau |
-| Supabase báo project bị tạm dừng | Vào dashboard bấm **Restore**, dữ liệu không mất. Kiểm tra workflow `keepalive` có chạy |
+| Màn đăng nhập báo “Không kết nối được máy chủ” dù mạng tốt | Project Supabase có thể đã bị tạm dừng: xem mục “Giữ Supabase không bị tạm dừng” → “Nếu project đã bị tạm dừng” |
 | Không tải được ảnh sản phẩm / ảnh giao hàng | Kiểm tra migration `…0700_m6…` đã chạy (tạo kho ảnh và quyền) |
 | Link `maps.app.goo.gl` không đọc được | Kiểm tra đã deploy `resolve-map-link`; hoặc mở link, copy link dài / toạ độ rồi dán |
 | Nút “Tối ưu tuyến” không dùng đường thật | Chưa đặt `ORS_API_KEY` hoặc hết lượt. App vẫn sắp xếp được trên máy |

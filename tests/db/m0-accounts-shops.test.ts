@@ -92,9 +92,34 @@ describe('anonymous access', () => {
 })
 
 describe('keepalive', () => {
-  it('can be called without signing in and returns only the time', async () => {
-    const [row] = await rpc<{ keepalive: Date }>(db, null, 'keepalive')
-    expect(Math.abs(row.keepalive.getTime() - Date.now())).toBeLessThan(60_000)
+  it('can be called without signing in and returns only the heartbeat', async () => {
+    const [row] = await rpc<{ keepalive: { last_ping: string; pings: number } }>(db, null, 'keepalive')
+    expect(Object.keys(row.keepalive).sort()).toEqual(['last_ping', 'pings'])
+    expect(Math.abs(new Date(row.keepalive.last_ping).getTime() - Date.now())).toBeLessThan(3_600_000 + 60_000)
+  })
+
+  it('writes at most once per hour, however often it is called', async () => {
+    const readPings = async () => (await db.query('select pings from public.system_heartbeat')).rows[0].pings as string
+    // Make the last ping look old so the next call is allowed to write.
+    await db.query(`update public.system_heartbeat set last_ping = now() - interval '2 hours'`)
+    const before = Number(await readPings())
+    for (let i = 0; i < 5; i++) await rpc(db, null, 'keepalive')
+    expect(Number(await readPings())).toBe(before + 1)
+    const [{ last_ping }] = await db.query('select last_ping from public.system_heartbeat').then((r) => r.rows)
+    expect(Date.now() - new Date(last_ping).getTime()).toBeLessThan(60_000)
+  })
+
+  it('nobody can read or write the heartbeat table directly', async () => {
+    await expectPgError(sql(db, null, 'select * from public.system_heartbeat'), '42501')
+    await expectPgError(sql(db, owner1, 'update public.system_heartbeat set pings = 0'), '42501')
+    expect(await sql(db, owner1, 'select * from public.system_heartbeat')).toEqual([])
+  })
+
+  it('only the admin can see when the last ping was', async () => {
+    const [row] = await rpc<{ admin_heartbeat: { last_ping: string; pings: number } }>(db, admin, 'admin_heartbeat')
+    expect(row.admin_heartbeat.pings).toBeGreaterThan(0)
+    await expectPgError(rpc(db, owner1, 'admin_heartbeat'), '42501')
+    await expectPgError(rpc(db, null, 'admin_heartbeat'), '42501')
   })
 
   it('is the only function anonymous users can call', async () => {

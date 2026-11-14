@@ -2,6 +2,7 @@ import { Lock, Store } from 'lucide-react'
 import type { ReactNode } from 'react'
 import { Navigate, Outlet, useLocation } from 'react-router'
 import { Button } from '@/components/ui/Button'
+import { PausedHint } from '@/components/ui/PausedHint'
 import { EmptyState, FullScreenLoader } from '@/components/ui/misc'
 import type { AccountType } from '@/lib/types'
 import { useCurrentShop } from './current-shop'
@@ -33,7 +34,7 @@ export function RequireAuth() {
             </div>
           }
         >
-          Kiểm tra kết nối mạng rồi thử lại.
+          <PausedHint />
         </EmptyState>
       </CenteredScreen>
     )

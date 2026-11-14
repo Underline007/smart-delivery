@@ -1,5 +1,7 @@
 import { FunctionsFetchError, FunctionsHttpError } from '@supabase/supabase-js'
 
+export const NETWORK_ERROR_MESSAGE = 'Không có kết nối mạng, vui lòng thử lại'
+
 const AUTH_MESSAGES: [RegExp, string][] = [
   [/invalid login credentials/i, 'Sai số điện thoại hoặc mật khẩu'],
   [/user is banned/i, 'Tài khoản đã bị khoá. Liên hệ admin.'],
@@ -7,7 +9,7 @@ const AUTH_MESSAGES: [RegExp, string][] = [
   [/password should be at least/i, 'Mật khẩu quá ngắn'],
   [/weak password/i, 'Mật khẩu quá yếu, hãy chọn mật khẩu khác'],
   [/jwt expired|invalid jwt|refresh token/i, 'Phiên đăng nhập đã hết hạn, vui lòng đăng nhập lại'],
-  [/failed to fetch|networkerror|load failed/i, 'Không có kết nối mạng, vui lòng thử lại'],
+  [/failed to fetch|networkerror|load failed/i, NETWORK_ERROR_MESSAGE],
   [/rate limit/i, 'Thao tác quá nhanh, vui lòng thử lại sau ít phút'],
 ]
 
@@ -22,7 +24,7 @@ export async function toMessage(error: unknown): Promise<string> {
     }
     return 'Máy chủ báo lỗi, vui lòng thử lại'
   }
-  if (error instanceof FunctionsFetchError) return 'Không có kết nối mạng, vui lòng thử lại'
+  if (error instanceof FunctionsFetchError) return NETWORK_ERROR_MESSAGE
 
   const { message, code } = (error ?? {}) as { message?: string; code?: string }
   if (!message) return 'Đã có lỗi xảy ra'

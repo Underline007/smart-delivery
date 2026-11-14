@@ -1,11 +1,18 @@
 name: Keep Supabase awake
 
-# A free Supabase project is paused after 7 days without activity.
-# This calls the public keepalive() function (it only returns the time).
+# A free Supabase project is paused after about 7 days without activity.
+# This calls the public keepalive() function twice a day. The function writes one
+# heartbeat row (at most once per hour), so the database sees real activity.
+#
+# If the call fails, or the heartbeat is not fresh afterwards, the job FAILS and GitHub
+# emails you. Keep this workflow enabled: GitHub switches off scheduled workflows of
+# PUBLIC repositories after 60 days without repo activity (keep the repo private).
+#
+# A second, independent pinger lives in workers/keepalive (Cloudflare Worker).
 
 on:
   schedule:
-    - cron: '17 3 */3 * *'
+    - cron: '17 3,15 * * *'
   workflow_dispatch:
 
 jobs:
@@ -13,19 +20,30 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
-      - name: Call keepalive()
+      - name: Call keepalive() and check the heartbeat
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
           SUPABASE_PUBLISHABLE_KEY: ${{ secrets.SUPABASE_PUBLISHABLE_KEY }}
         run: |
+          set -euo pipefail
           if [ -z "$SUPABASE_URL" ] || [ -z "$SUPABASE_PUBLISHABLE_KEY" ]; then
             echo "SUPABASE_URL / SUPABASE_PUBLISHABLE_KEY secrets are not set." >&2
             exit 1
           fi
-          curl --fail --silent --show-error --retry 3 --retry-delay 10 \
+
+          body=$(curl --fail --silent --show-error --retry 4 --retry-delay 20 --retry-all-errors \
             -X POST "$SUPABASE_URL/rest/v1/rpc/keepalive" \
             -H "apikey: $SUPABASE_PUBLISHABLE_KEY" \
             -H "Authorization: Bearer $SUPABASE_PUBLISHABLE_KEY" \
             -H "Content-Type: application/json" \
-            -d '{}'
-          echo
+            -d '{}')
+          echo "Response: $body"
+
+          last=$(echo "$body" | jq -r '.last_ping')
+          age=$(( $(date +%s) - $(date -d "$last" +%s) ))
+          echo "Last heartbeat was ${age}s ago."
+          # keepalive() rewrites the row when it is older than 1 hour, so it must be fresh now.
+          if [ "$age" -gt 7200 ]; then
+            echo "::error::The heartbeat is not being updated (${age}s old). Check the database."
+            exit 1
+          fi

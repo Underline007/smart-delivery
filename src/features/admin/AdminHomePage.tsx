@@ -7,7 +7,8 @@ import { PageBody } from '@/components/layout/AppShell'
 import { PageHeader } from '@/components/layout/PageHeader'
 import { Card, SectionTitle, Spinner } from '@/components/ui/misc'
 import { adminShopSummary } from '@/features/reports/api'
-import { adminDbUsage, adminListAccounts, adminListShops } from '@/lib/api'
+import { adminDbUsage, adminHeartbeat, adminListAccounts, adminListShops } from '@/lib/api'
+import { heartbeatStatus } from './heartbeat'
 import { formatMoney } from '@/lib/format'
 import { cn } from '@/lib/cn'
 
@@ -56,6 +57,8 @@ export function AdminHomePage() {
   const accounts = useQuery({ queryKey: ['admin', 'accounts'], queryFn: () => adminListAccounts() })
   const usage = useQuery({ queryKey: ['admin', 'db-usage'], queryFn: adminDbUsage })
   const summary = useQuery({ queryKey: ['admin', 'shop-summary'], queryFn: adminShopSummary })
+  const heartbeat = useQuery({ queryKey: ['admin', 'heartbeat'], queryFn: adminHeartbeat })
+  const pulse = heartbeat.data ? heartbeatStatus(heartbeat.data.last_ping) : null
   const nearLimit = usage.data !== undefined && usage.data / DB_LIMIT_BYTES > 0.7
 
   const count = (type: string) =>
@@ -136,6 +139,27 @@ export function AdminHomePage() {
             <p className="text-sm text-muted">
               Gói miễn phí của Supabase cho tối đa 500 MB.
             </p>
+            <div
+              role={pulse && pulse.level !== 'ok' ? 'alert' : undefined}
+              className={cn(
+                'rounded-xl px-3.5 py-3 text-sm',
+                !pulse || pulse.level === 'ok' ? 'bg-success-soft text-success' : pulse.level === 'warning' ? 'bg-warning-soft text-warning' : 'bg-danger-soft text-danger',
+              )}
+            >
+              <p className="font-semibold">Giữ Supabase không bị tạm dừng</p>
+              {!pulse ? (
+                <p>{heartbeat.isLoading ? 'Đang kiểm tra…' : 'Chưa đọc được trạng thái.'}</p>
+              ) : pulse.level === 'ok' ? (
+                <p>Hoạt động bình thường. Lần gọi gần nhất: {pulse.ago}.</p>
+              ) : (
+                <p>
+                  Lần gọi gần nhất: <strong>{pulse.ago}</strong>.{' '}
+                  {pulse.level === 'danger'
+                    ? 'Project sắp bị tạm dừng! Kiểm tra ngay các workflow “Keep Supabase awake” trên GitHub (và Cloudflare Worker nếu có).'
+                    : 'Các lần gọi tự động có vẻ đã dừng. Kiểm tra workflow “Keep Supabase awake” trên GitHub.'}
+                </p>
+              )}
+            </div>
             {nearLimit && (
               <p role="alert" className="rounded-xl bg-warning-soft px-3.5 py-3 text-sm text-warning">
                 Đã dùng quá 70% dung lượng cơ sở dữ liệu. Hãy xuất dữ liệu cũ ra Excel, xoá bớt ảnh không dùng, hoặc cân nhắc nâng gói.

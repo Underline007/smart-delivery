@@ -5,7 +5,8 @@ import { Button } from '@/components/ui/Button'
 import { PasswordField, TextField } from '@/components/ui/Field'
 import { FullScreenLoader } from '@/components/ui/misc'
 import { signIn } from '@/lib/api'
-import { toMessage } from '@/lib/errors'
+import { PausedHint } from '@/components/ui/PausedHint'
+import { NETWORK_ERROR_MESSAGE, toMessage } from '@/lib/errors'
 import { normalizeVnMobile } from '@/lib/vn/phone'
 
 export function LoginPage() {
@@ -72,11 +73,12 @@ export function LoginPage() {
             onChange={(e) => setPassword(e.target.value)}
             required
           />
-          {formError && (
+          {formError && formError !== NETWORK_ERROR_MESSAGE && (
             <p role="alert" className="rounded-xl bg-danger-soft px-3.5 py-3 text-sm text-danger">
               {formError}
             </p>
           )}
+          {formError === NETWORK_ERROR_MESSAGE && <PausedHint />}
           <Button type="submit" block loading={submitting} disabled={!phone || !password}>
             Đăng nhập
           </Button>

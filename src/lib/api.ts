@@ -229,3 +229,12 @@ export async function adminListAudit(before?: number): Promise<AuditRow[]> {
     await supabase.rpc('admin_list_audit', { p_limit: 50, p_before: before ?? null }),
   ) as AuditRow[]
 }
+
+export interface Heartbeat {
+  last_ping: string
+  pings: number
+}
+
+export async function adminHeartbeat(): Promise<Heartbeat> {
+  return unwrap(await supabase.rpc('admin_heartbeat')) as Heartbeat
+}

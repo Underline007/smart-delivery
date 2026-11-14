@@ -13,6 +13,7 @@ Thiết kế ưu tiên **điện thoại** (PWA, cài lên màn hình chính). *
 - **Giao hàng**: lập chuyến, tối ưu tuyến, màn hình shipper một tay (gọi, Zalo, dẫn đường, ảnh, thu COD), đối soát.
 - **Nhiều cửa hàng**: dữ liệu mỗi shop tách biệt hoàn toàn; shipper dùng chung và chỉ thấy chuyến của mình.
 - **Báo cáo**, xuất toàn bộ dữ liệu ra Excel, sao lưu mã hoá hằng tuần.
+- **Chống bị Supabase tạm dừng** (gói miễn phí dừng sau 7 ngày không hoạt động): nhiều bộ gọi định kỳ độc lập, thẻ cảnh báo cho admin. Xem [docs/SETUP.md](docs/SETUP.md#giữ-supabase-không-bị-tạm-dừng).
 
 ## Tài liệu
 
@@ -21,7 +22,7 @@ Thiết kế ưu tiên **điện thoại** (PWA, cài lên màn hình chính). *
 
 ## Trạng thái
 
-Đã code xong toàn bộ kế hoạch và có kiểm thử tự động (163 test cơ sở dữ liệu, 203 test đơn vị, 45 test giao diện điện thoại). **Chưa chạy với Supabase và ViettelPost thật**: cần cài đặt và làm theo danh sách kiểm tra ở SETUP.md, và cần file mẫu ViettelPost của bạn (xem [docs/SETUP.md](docs/SETUP.md#10-chuẩn-bị-dữ-liệu-cho-viettelpost)).
+Đã code xong toàn bộ kế hoạch và có kiểm thử tự động (166 test cơ sở dữ liệu, 207 test đơn vị, 51 test giao diện điện thoại). **Chưa chạy với Supabase và ViettelPost thật**: cần cài đặt và làm theo danh sách kiểm tra ở SETUP.md, và cần file mẫu ViettelPost của bạn (xem [docs/SETUP.md](docs/SETUP.md#10-chuẩn-bị-dữ-liệu-cho-viettelpost)).
 
 ## Chạy thử trên máy
 

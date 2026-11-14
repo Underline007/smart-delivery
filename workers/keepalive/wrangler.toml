@@ -1,0 +1,7 @@
+name = "smart-delivery-keepalive"
+main = "index.js"
+compatibility_date = "2026-11-01"
+
+# Twice a day, at minutes that differ from the GitHub workflow (03:17 / 15:17 UTC).
+[triggers]
+crons = ["41 9,21 * * *"]

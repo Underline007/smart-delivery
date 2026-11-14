@@ -453,7 +453,15 @@ Không có server riêng phải nuôi.
 | **Google Maps Platform** (Cách A) | Trả theo dùng, có hạn mức miễn phí theo SKU | Essentials 10.000 / Pro 5.000 / Enterprise 1.000 lượt/tháng/SKU | Vài trăm lượt/tháng | Khai báo thẻ + giới hạn cứng mỗi ngày |
 | **Sentry** | Developer | 5.000 lỗi/tháng | Rất ít | Tuỳ chọn |
 
-**Giữ Supabase không bị tạm dừng**: GitHub Actions chạy mỗi 3 ngày, gửi 1 truy vấn nhỏ qua REST API. Nếu vẫn bị tạm dừng, vào dashboard bấm *Restore*; dữ liệu không mất.
+**Giữ Supabase không bị tạm dừng** (gói miễn phí dừng sau khoảng 7 ngày không hoạt động) bằng nhiều lớp độc lập:
+1. Hàm công khai `keepalive()` **ghi** 1 dòng vào bảng `system_heartbeat` (tối đa 1 lần/giờ nên không ai lạm dụng được) và trả về lần gọi gần nhất.
+2. GitHub Actions gọi hàm này 2 lần/ngày, rồi **kiểm tra** nhịp tim còn mới; nếu không thì workflow báo lỗi và GitHub gửi email.
+3. Cloudflare Worker (`workers/keepalive`) gọi độc lập 2 lần/ngày, phòng khi GitHub tắt workflow định kỳ (repo công khai sau 60 ngày không hoạt động) hoặc chạy trễ.
+4. Trang Hệ thống của admin hiện thẻ cảnh báo xanh / vàng / đỏ theo tuổi của lần gọi gần nhất (`admin_heartbeat`); đỏ từ 5 ngày.
+5. Màn đăng nhập và màn tải dữ liệu giải thích “project có thể đã bị tạm dừng” khi không kết nối được máy chủ.
+6. Sao lưu mã hoá hằng tuần làm lưới an toàn cuối cùng.
+
+**Giới hạn:** Supabase không công bố chính xác thế nào là “hoạt động”, và chưa kiểm chứng với project thật. Nếu vẫn bị tạm dừng, vào dashboard bấm *Restore* (dữ liệu không mất, khôi phục được trong khoảng 90 ngày). Cách duy nhất loại bỏ hẳn việc tạm dừng là gói Pro (có phí), việc này do chủ dự án quyết định.
 
 ### 3.5 Cấu trúc thư mục
 
@@ -493,9 +501,10 @@ smart-delivery/
 │  │  └─ optimize-route/         ← proxy ORS / Google Routes
 │  └─ tests/                     ← test SQL cho RPC & RLS (cô lập dữ liệu giữa shop)
 ├─ tests/e2e/                    ← Playwright
+├─ workers/keepalive/            ← Cloudflare Worker gọi keepalive() (lớp bảo vệ thứ hai)
 └─ .github/workflows/
    ├─ ci.yml                     ← lint, typecheck, test
-   ├─ keepalive.yml              ← ping Supabase mỗi 3 ngày
+   ├─ keepalive.yml              ← gọi keepalive() 2 lần/ngày và kiểm tra nhịp tim
    ├─ backup.yml                 ← sao lưu DB hằng tuần
    └─ cleanup.yml                ← xoá ảnh bằng chứng giao hàng > 30 ngày
 ```
@@ -937,9 +946,9 @@ Toàn bộ giai đoạn 0–7 đã được viết và kiểm thử tự động
 
 | Loại | Số test | Kiểm tra gì |
 |---|---:|---|
-| Test cơ sở dữ liệu (PostgreSQL thật) | 163 | Phân quyền / RLS giữa các shop và vai trò; tồn kho khớp sổ kho; vòng đời đơn; **hai người xác nhận cùng lúc**; chuyến giao; báo cáo; quyền kho ảnh |
-| Test đơn vị | 203 | Chuẩn hoá SĐT, tách tin nhắn / địa chỉ, đọc link Maps, CSV, tính tiền, tối ưu tuyến (so với vét cạn), tạo & đọc lại file Excel |
-| Test giao diện điện thoại (Chromium, màn 390 px) | 45 | Đăng nhập & điều hướng theo vai trò, các luồng chính của chủ shop và shipper, file Excel tải về được đọc lại |
+| Test cơ sở dữ liệu (PostgreSQL thật) | 166 | Phân quyền / RLS giữa các shop và vai trò; tồn kho khớp sổ kho; vòng đời đơn; **hai người xác nhận cùng lúc**; chuyến giao; báo cáo; quyền kho ảnh |
+| Test đơn vị | 207 | Chuẩn hoá SĐT, tách tin nhắn / địa chỉ, đọc link Maps, CSV, tính tiền, tối ưu tuyến (so với vét cạn), tạo & đọc lại file Excel |
+| Test giao diện điện thoại (Chromium, màn 390 px) | 51 | Đăng nhập & điều hướng theo vai trò, các luồng chính của chủ shop và shipper, file Excel tải về được đọc lại |
 | Kiểm tra kiểu + lint + Deno (Edge Functions) | — | 0 lỗi |
 
 ### 13.2 Điểm khác kế hoạch ban đầu
@@ -950,7 +959,7 @@ Toàn bộ giai đoạn 0–7 đã được viết và kiểm thử tự động
 | Tối ưu tuyến bằng Google Routes (tầng C) | **Không làm** | Phụ thuộc Cách A |
 | Kéo-thả sắp xếp điểm giao | Nút lên / xuống | Ổn định hơn trên điện thoại |
 | Tối ưu tuyến tầng B (OpenRouteService) | Có, **tuỳ chọn** (cần `ORS_API_KEY`); mặc định dùng thuật toán trên máy | Miễn phí, không cần thẻ |
-| Giữ DB thức bằng truy vấn bất kỳ | Hàm công khai `keepalive()` | Gọi được không cần đăng nhập mà không lộ dữ liệu |
+| Giữ DB thức bằng 1 truy vấn nhỏ mỗi 3 ngày | **Nhiều lớp**: hàm công khai `keepalive()` ghi 1 dòng nhịp tim (≤ 1 lần/giờ), GitHub Actions 2 lần/ngày có kiểm tra kết quả, Cloudflare Worker độc lập, thẻ cảnh báo cho admin, màn hình báo lỗi khi không kết nối được | Việc bị tạm dừng sau 7 ngày là rủi ro lớn; không lớp nào bảo đảm tuyệt đối vì Supabase không công bố định nghĩa “hoạt động” |
 | Danh mục tỉnh/xã nạp sẵn | 34 tỉnh nạp sẵn (kèm tên các tỉnh cũ đã gộp); **xã/phường do admin nhập từ CSV** | Không tải được dữ liệu từ ngoài; nên dùng đúng danh mục của ViettelPost |
 | Thẻ “Hệ thống” báo dung lượng file | Chỉ báo dung lượng database | API của Storage không cho đọc tổng dung lượng bằng khoá thường |
 | Mã tỉnh | Mã 2 số do hệ thống đặt | Có thể khác mã của ViettelPost; file CSV nhập xã/phường nhận cả tên tỉnh |
@@ -962,7 +971,8 @@ Toàn bộ giai đoạn 0–7 đã được viết và kiểm thử tự động
 3. **Danh mục phường/xã** (CSV theo danh mục ViettelPost) và **tin nhắn mẫu** để tinh chỉnh bộ tách địa chỉ.
 4. **Thử trên điện thoại thật**: cài PWA, chụp ảnh, GPS, mở Google Maps, chia sẻ file Excel qua Zalo. Test tự động chỉ giả lập màn hình.
 5. **Thử khôi phục** từ bản sao lưu vào project trống.
-6. Chưa làm (để sau, mục 10): API ViettelPost, quét mã vạch, thao tác offline cho shipper, thông báo đẩy, in nhãn.
+6. **Giữ Supabase không bị tạm dừng**: cài thêm Cloudflare Worker (SETUP, mục “Giữ Supabase không bị tạm dừng”) và theo dõi thẻ cảnh báo ở trang Hệ thống của admin. Chưa kiểm chứng với project Supabase thật rằng cách này đủ để tránh bị dừng.
+7. Chưa làm (để sau, mục 10): API ViettelPost, quét mã vạch, thao tác offline cho shipper, thông báo đẩy, in nhãn.
 
 ## 14. Quy ước kỹ thuật
 
