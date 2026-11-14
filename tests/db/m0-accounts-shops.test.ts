@@ -91,6 +91,36 @@ describe('anonymous access', () => {
   })
 })
 
+describe('keepalive', () => {
+  it('can be called without signing in and returns only the time', async () => {
+    const [row] = await rpc<{ keepalive: Date }>(db, null, 'keepalive')
+    expect(Math.abs(row.keepalive.getTime() - Date.now())).toBeLessThan(60_000)
+  })
+
+  it('is the only function anonymous users can call', async () => {
+    const rows = await sql<{ proname: string }>(
+      db,
+      admin,
+      `select p.proname from pg_proc p join pg_namespace n on n.oid = p.pronamespace
+       where n.nspname = 'public' and p.prokind = 'f'
+         and has_function_privilege('anon', p.oid, 'execute')`,
+    )
+    expect(rows.map((r) => r.proname)).toEqual(['keepalive'])
+  })
+
+  it('internal helpers and triggers stay out of reach of signed-in users', async () => {
+    const rows = await sql<{ proname: string }>(
+      db,
+      admin,
+      `select p.proname from pg_proc p join pg_namespace n on n.oid = p.pronamespace
+       where n.nspname = 'public' and p.prokind = 'f'
+         and (starts_with(p.proname, '_') or starts_with(p.proname, 'tg_'))
+         and has_function_privilege('authenticated', p.oid, 'execute')`,
+    )
+    expect(rows).toEqual([])
+  })
+})
+
 describe('my_context', () => {
   it('returns the profile and active shops with the role', async () => {
     const ctx = await context(shipperBoth)

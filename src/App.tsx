@@ -1,4 +1,4 @@
-import { lazy, Suspense } from 'react'
+import { lazy, Suspense, type ComponentType } from 'react'
 import { Navigate, Route, Routes } from 'react-router'
 import { CurrentShopProvider } from '@/app/CurrentShopProvider'
 import {
@@ -11,47 +11,47 @@ import {
 import { AdminLayout, ShipperLayout, ShopLayout } from '@/app/layouts'
 import { SessionProvider } from '@/app/SessionProvider'
 import { SetupNeeded } from '@/app/SetupNeeded'
-import { ComingSoon } from '@/components/ui/ComingSoon'
 import { LoadingBlock } from '@/components/ui/misc'
-import { AdminAccountsPage } from '@/features/admin/AdminAccountsPage'
-import { AdminCatalogPage } from '@/features/admin/AdminCatalogPage'
-import { AdminVtpTemplatePage } from '@/features/vtp/AdminVtpTemplatePage'
-import { VtpExportPage } from '@/features/vtp/VtpExportPage'
-import { VtpTrackingPage } from '@/features/vtp/VtpTrackingPage'
-import { AdminAuditPage } from '@/features/admin/AdminAuditPage'
-import { AdminHomePage } from '@/features/admin/AdminHomePage'
-import { AdminSettingsPage } from '@/features/admin/AdminSettingsPage'
-import { AdminShopsPage } from '@/features/admin/AdminShopsPage'
-import { CustomerDetailPage } from '@/features/customers/CustomerDetailPage'
-import { CustomersPage } from '@/features/customers/CustomersPage'
 import { ChangePasswordPage } from '@/features/auth/ChangePasswordPage'
 import { LoginPage } from '@/features/auth/LoginPage'
-import { HistoryPage } from '@/features/products/HistoryPage'
-import { InventoryPage } from '@/features/products/InventoryPage'
-import { ProductFormPage } from '@/features/products/ProductFormPage'
-import { ReceiptPage } from '@/features/products/ReceiptPage'
-import { StockCardPage } from '@/features/products/StockCardPage'
-import { StocktakePage } from '@/features/products/StocktakePage'
-import { OrderDetailPage } from '@/features/orders/OrderDetailPage'
-import { OrderFormPage } from '@/features/orders/OrderFormPage'
-import { OrdersPage } from '@/features/orders/OrdersPage'
-import { ShipperAccountPage, ShipperHistoryPage, ShipperTripPage, ShipperTripsPage } from '@/features/delivery/ShipperPages'
-import { TripDetailPage } from '@/features/delivery/TripDetailPage'
-import { TripPlannerPage } from '@/features/delivery/TripPlannerPage'
-import { TripsPage } from '@/features/delivery/TripsPage'
-import { ShopSettingsPage } from '@/features/shop/ShopSettingsPage'
-import { ShopShippersPage } from '@/features/shop/ShopShippersPage'
 import { isConfigured } from '@/lib/env'
 
-const lazyPage = <T extends Record<string, React.ComponentType>>(
-  load: () => Promise<T>,
-  name: keyof T,
-) => lazy(async () => ({ default: (await load())[name] as React.ComponentType }))
+/** Loads a page's code only when its route is opened (keeps the first download small). */
+function lazyPage<M, K extends keyof M>(load: () => Promise<M>, name: K) {
+  return lazy(async () => ({ default: (await load())[name] as ComponentType }))
+}
 
-// Lazy pages are added here as modules are built.
-const Lazy = {}
-void Lazy
-void lazyPage
+const AdminAccountsPage = lazyPage(() => import('@/features/admin/AdminAccountsPage'), 'AdminAccountsPage')
+const AdminCatalogPage = lazyPage(() => import('@/features/admin/AdminCatalogPage'), 'AdminCatalogPage')
+const AdminVtpTemplatePage = lazyPage(() => import('@/features/vtp/AdminVtpTemplatePage'), 'AdminVtpTemplatePage')
+const VtpExportPage = lazyPage(() => import('@/features/vtp/VtpExportPage'), 'VtpExportPage')
+const VtpTrackingPage = lazyPage(() => import('@/features/vtp/VtpTrackingPage'), 'VtpTrackingPage')
+const AdminAuditPage = lazyPage(() => import('@/features/admin/AdminAuditPage'), 'AdminAuditPage')
+const AdminHomePage = lazyPage(() => import('@/features/admin/AdminHomePage'), 'AdminHomePage')
+const AdminSettingsPage = lazyPage(() => import('@/features/admin/AdminSettingsPage'), 'AdminSettingsPage')
+const AdminShopsPage = lazyPage(() => import('@/features/admin/AdminShopsPage'), 'AdminShopsPage')
+const CustomerDetailPage = lazyPage(() => import('@/features/customers/CustomerDetailPage'), 'CustomerDetailPage')
+const CustomersPage = lazyPage(() => import('@/features/customers/CustomersPage'), 'CustomersPage')
+const HistoryPage = lazyPage(() => import('@/features/products/HistoryPage'), 'HistoryPage')
+const InventoryPage = lazyPage(() => import('@/features/products/InventoryPage'), 'InventoryPage')
+const ProductFormPage = lazyPage(() => import('@/features/products/ProductFormPage'), 'ProductFormPage')
+const ReceiptPage = lazyPage(() => import('@/features/products/ReceiptPage'), 'ReceiptPage')
+const StockCardPage = lazyPage(() => import('@/features/products/StockCardPage'), 'StockCardPage')
+const StocktakePage = lazyPage(() => import('@/features/products/StocktakePage'), 'StocktakePage')
+const OrderDetailPage = lazyPage(() => import('@/features/orders/OrderDetailPage'), 'OrderDetailPage')
+const OrderFormPage = lazyPage(() => import('@/features/orders/OrderFormPage'), 'OrderFormPage')
+const OrdersPage = lazyPage(() => import('@/features/orders/OrdersPage'), 'OrdersPage')
+const ShipperAccountPage = lazyPage(() => import('@/features/delivery/ShipperPages'), 'ShipperAccountPage')
+const ShipperHistoryPage = lazyPage(() => import('@/features/delivery/ShipperPages'), 'ShipperHistoryPage')
+const ShipperTripPage = lazyPage(() => import('@/features/delivery/ShipperPages'), 'ShipperTripPage')
+const ShipperTripsPage = lazyPage(() => import('@/features/delivery/ShipperPages'), 'ShipperTripsPage')
+const TripDetailPage = lazyPage(() => import('@/features/delivery/TripDetailPage'), 'TripDetailPage')
+const TripPlannerPage = lazyPage(() => import('@/features/delivery/TripPlannerPage'), 'TripPlannerPage')
+const TripsPage = lazyPage(() => import('@/features/delivery/TripsPage'), 'TripsPage')
+const DashboardPage = lazyPage(() => import('@/features/reports/DashboardPage'), 'DashboardPage')
+const ReportsPage = lazyPage(() => import('@/features/reports/ReportsPage'), 'ReportsPage')
+const ShopSettingsPage = lazyPage(() => import('@/features/shop/ShopSettingsPage'), 'ShopSettingsPage')
+const ShopShippersPage = lazyPage(() => import('@/features/shop/ShopShippersPage'), 'ShopShippersPage')
 
 export function App() {
   if (!isConfigured) return <SetupNeeded />
@@ -96,7 +96,7 @@ export function App() {
                     </RequireAccountType>
                   }
                 >
-                  <Route index element={<ComingSoon title="Tổng quan" />} />
+                  <Route index element={<DashboardPage />} />
                   <Route path="orders" element={<OrdersPage />} />
                   <Route path="orders/new" element={<OrderFormPage />} />
                   <Route path="orders/:orderId" element={<OrderDetailPage />} />
@@ -115,7 +115,7 @@ export function App() {
                   <Route path="delivery/:tripId" element={<TripDetailPage />} />
                   <Route path="vtp/export" element={<VtpExportPage />} />
                   <Route path="vtp/tracking" element={<VtpTrackingPage />} />
-                  <Route path="reports" element={<ComingSoon title="Báo cáo" />} />
+                  <Route path="reports" element={<ReportsPage />} />
                   <Route path="settings" element={<ShopSettingsPage />} />
                   <Route path="settings/shippers" element={<ShopShippersPage />} />
                 </Route>

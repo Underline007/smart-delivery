@@ -6,7 +6,9 @@ import { useMe } from '@/app/session'
 import { PageBody } from '@/components/layout/AppShell'
 import { PageHeader } from '@/components/layout/PageHeader'
 import { Card, SectionTitle, Spinner } from '@/components/ui/misc'
+import { adminShopSummary } from '@/features/reports/api'
 import { adminDbUsage, adminListAccounts, adminListShops } from '@/lib/api'
+import { formatMoney } from '@/lib/format'
 import { cn } from '@/lib/cn'
 
 const DB_LIMIT_BYTES = 500 * 1024 * 1024
@@ -53,6 +55,8 @@ export function AdminHomePage() {
   const shops = useQuery({ queryKey: ['admin', 'shops'], queryFn: adminListShops })
   const accounts = useQuery({ queryKey: ['admin', 'accounts'], queryFn: () => adminListAccounts() })
   const usage = useQuery({ queryKey: ['admin', 'db-usage'], queryFn: adminDbUsage })
+  const summary = useQuery({ queryKey: ['admin', 'shop-summary'], queryFn: adminShopSummary })
+  const nearLimit = usage.data !== undefined && usage.data / DB_LIMIT_BYTES > 0.7
 
   const count = (type: string) =>
     accounts.data?.filter((a) => a.account_type === type && a.active).length ?? '–'
@@ -90,6 +94,30 @@ export function AdminHomePage() {
           />
         </div>
 
+        {summary.data && summary.data.length > 0 && (
+          <section>
+            <SectionTitle>Cửa hàng trong 30 ngày</SectionTitle>
+            <Card className="py-2">
+              <ul>
+                {summary.data.map((shop) => (
+                  <li key={shop.shop_id} className="flex items-center gap-3 border-b border-border py-2.5 last:border-b-0">
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate font-medium">
+                        {shop.name}
+                        {!shop.active && <span className="text-muted"> (khoá)</span>}
+                      </p>
+                      <p className="text-sm text-muted">
+                        {shop.orders_30d} đơn · đã giao {shop.delivered_30d}
+                      </p>
+                    </div>
+                    <p className="font-semibold tabular-nums">{formatMoney(shop.revenue_30d)}</p>
+                  </li>
+                ))}
+              </ul>
+            </Card>
+          </section>
+        )}
+
         <section>
           <SectionTitle>Hạ tầng miễn phí</SectionTitle>
           <Card className="flex flex-col gap-3">
@@ -106,8 +134,13 @@ export function AdminHomePage() {
             </div>
             {usage.data !== undefined && <UsageBar used={usage.data} limit={DB_LIMIT_BYTES} />}
             <p className="text-sm text-muted">
-              Gói miễn phí của Supabase cho tối đa 500 MB. App sẽ cảnh báo khi dùng quá 70%.
+              Gói miễn phí của Supabase cho tối đa 500 MB.
             </p>
+            {nearLimit && (
+              <p role="alert" className="rounded-xl bg-warning-soft px-3.5 py-3 text-sm text-warning">
+                Đã dùng quá 70% dung lượng cơ sở dữ liệu. Hãy xuất dữ liệu cũ ra Excel, xoá bớt ảnh không dùng, hoặc cân nhắc nâng gói.
+              </p>
+            )}
           </Card>
         </section>
       </PageBody>

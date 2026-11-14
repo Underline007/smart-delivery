@@ -1,0 +1,53 @@
+name: Weekly database backup
+
+# Dumps the database, encrypts it with your PUBLIC age key and stores it as a
+# workflow artifact for 90 days. Only you (holding the private key) can read it.
+#
+# Secrets: SUPABASE_DB_URL (Project settings → Database → connection string, "Session pooler"),
+#          BACKUP_AGE_RECIPIENT (public key that starts with "age1…").
+# Keep the PRIVATE key (AGE-SECRET-KEY-…) somewhere safe, outside GitHub.
+
+on:
+  schedule:
+    - cron: '41 20 * * 0'
+  workflow_dispatch:
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Check secrets
+        env:
+          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+          BACKUP_AGE_RECIPIENT: ${{ secrets.BACKUP_AGE_RECIPIENT }}
+        run: |
+          [ -n "$SUPABASE_DB_URL" ] && [ -n "$BACKUP_AGE_RECIPIENT" ] || { echo "Missing SUPABASE_DB_URL or BACKUP_AGE_RECIPIENT" >&2; exit 1; }
+
+      - name: Install age
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq age
+
+      - name: Dump and encrypt
+        env:
+          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+          BACKUP_AGE_RECIPIENT: ${{ secrets.BACKUP_AGE_RECIPIENT }}
+        run: |
+          set -euo pipefail
+          stamp=$(date -u +%Y%m%d)
+          mkdir out
+          # pg_dump must be at least as new as the server: use the matching official image.
+          docker run --rm postgres:17 pg_dump "$SUPABASE_DB_URL" \
+            --no-owner --no-privileges --schema=public --format=plain \
+            | gzip -9 | age -r "$BACKUP_AGE_RECIPIENT" > "out/smart-delivery-public-$stamp.sql.gz.age"
+          # Sign-in accounts (needed to restore into an empty project).
+          docker run --rm postgres:17 pg_dump "$SUPABASE_DB_URL" \
+            --no-owner --no-privileges --data-only --table=auth.users --table=auth.identities --format=plain \
+            | gzip -9 | age -r "$BACKUP_AGE_RECIPIENT" > "out/smart-delivery-auth-$stamp.sql.gz.age"
+          ls -l out
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: database-backup
+          path: out
+          retention-days: 90
+          if-no-files-found: error

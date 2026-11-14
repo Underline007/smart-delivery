@@ -228,8 +228,9 @@ export async function failStop(stopId: string, reason: string, note: string) {
 
 /** Uploads a (compressed) proof-of-delivery photo and returns its storage path. */
 export async function uploadProof(shopId: string, tripId: string, stopId: string, blob: Blob): Promise<string> {
-  const path = `${shopId}/${tripId}/${stopId}.jpg`
-  const { error } = await supabase.storage.from('delivery-proofs').upload(path, blob, { contentType: 'image/jpeg', upsert: true })
+  // Unique name: shippers may add files but not overwrite them.
+  const path = `${shopId}/${tripId}/${stopId}-${Date.now()}.jpg`
+  const { error } = await supabase.storage.from('delivery-proofs').upload(path, blob, { contentType: 'image/jpeg', upsert: false })
   if (error) throw error
   return path
 }

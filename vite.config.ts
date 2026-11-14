@@ -36,6 +36,15 @@ export default defineConfig({
       },
       workbox: {
         globPatterns: ['**/*.{js,css,html,svg,png,ico,woff2}'],
+        // Excel support (~1 MB) is only needed when exporting: cache it on first use, not on install.
+        globIgnores: ['**/exceljs*.js'],
+        runtimeCaching: [
+          {
+            urlPattern: /\/assets\/exceljs.*\.js$/,
+            handler: 'CacheFirst',
+            options: { cacheName: 'excel-support', expiration: { maxEntries: 3 } },
+          },
+        ],
         navigateFallback: '/index.html',
       },
     }),

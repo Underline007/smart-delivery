@@ -8,6 +8,7 @@ import { PageBody, StickyBar } from '@/components/layout/AppShell'
 import { PageHeader } from '@/components/layout/PageHeader'
 import { Button } from '@/components/ui/Button'
 import { TextField } from '@/components/ui/Field'
+import { ImageUpload } from '@/components/ui/ImageUpload'
 import { MoneyInput } from '@/components/ui/MoneyInput'
 import { Badge, Card, ErrorBlock, LoadingBlock, SectionTitle } from '@/components/ui/misc'
 import { cn } from '@/lib/cn'
@@ -145,6 +146,7 @@ function ProductForm({ shopId, product }: { shopId: string; product: Product | n
   const [unit, setUnit] = useState(product?.unit ?? 'cái')
   const [description, setDescription] = useState(product?.description ?? '')
   const [active, setActive] = useState(product?.active ?? true)
+  const [imagePath, setImagePath] = useState<string | null>(product?.image_path ?? null)
   const [optionNames, setOptionNames] = useState<string[]>(product?.option_names ?? [])
   const [optionValues, setOptionValues] = useState<string[][]>(() => initialOptionValues(product))
   const [variants, setVariants] = useState<Record<string, VariantForm>>(() => initialVariants(product))
@@ -217,7 +219,7 @@ function ProductForm({ shopId, product }: { shopId: string; product: Product | n
       category: category.trim(),
       unit: unit.trim() || 'cái',
       description: description.trim(),
-      image_path: product?.image_path ?? null,
+      image_path: imagePath,
       active,
       option_names: optionNames.map((n) => n.trim()),
       variants: built,
@@ -247,6 +249,7 @@ function ProductForm({ shopId, product }: { shopId: string; product: Product | n
         <section>
           <SectionTitle>Thông tin chung</SectionTitle>
           <Card className="flex flex-col gap-4">
+            <ImageUpload shopId={shopId} value={imagePath} onChange={setImagePath} />
             <TextField label="Tên sản phẩm" value={name} onChange={(e) => setName(e.target.value)} maxLength={200} />
             <div className="grid grid-cols-2 gap-3">
               <TextField label="Nhóm" placeholder="Ví dụ: Áo" value={category} onChange={(e) => setCategory(e.target.value)} />

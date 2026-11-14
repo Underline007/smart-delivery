@@ -1,6 +1,7 @@
 import type { LucideIcon } from 'lucide-react'
-import type { ReactNode } from 'react'
+import { Suspense, type ReactNode } from 'react'
 import { NavLink, Outlet } from 'react-router'
+import { LoadingBlock } from '@/components/ui/misc'
 import { cn } from '@/lib/cn'
 
 export interface NavItem {
@@ -63,7 +64,10 @@ export function AppShell({ nav, banner }: { nav: NavItem[]; banner?: ReactNode }
   return (
     <div className="min-h-dvh pb-[calc(4rem+env(safe-area-inset-bottom))]">
       {banner}
-      <Outlet />
+      {/* Pages load on demand; the navigation stays visible while they do. */}
+      <Suspense fallback={<LoadingBlock />}>
+        <Outlet />
+      </Suspense>
       <BottomNav items={nav} />
     </div>
   )

@@ -1,7 +1,7 @@
 import { useInfiniteQuery } from '@tanstack/react-query'
 import { ChevronDown, ClipboardCheck, History, PackagePlus, Plus } from 'lucide-react'
 import { useState } from 'react'
-import { Link } from 'react-router'
+import { Link, useSearchParams } from 'react-router'
 import { useShop } from '@/app/current-shop'
 import { PageBody } from '@/components/layout/AppShell'
 import { PageHeader } from '@/components/layout/PageHeader'
@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/Button'
 import { SearchInput } from '@/components/ui/Field'
 import { Badge, Card, EmptyState, ErrorBlock, LoadingBlock } from '@/components/ui/misc'
 import { cn } from '@/lib/cn'
+import { productImageUrl } from '@/lib/image-url'
 import { formatMoney, formatNumber } from '@/lib/format'
 import { useDebounced } from '@/lib/useDebounced'
 import { listProducts, PAGE_SIZE, type Product, type ProductFilter } from './api'
@@ -35,6 +36,7 @@ function ProductCard({ product }: { product: Product }) {
         onClick={() => setOpen((o) => !o)}
         aria-expanded={open}
       >
+        {product.image_path && <img src={productImageUrl(product.image_path) ?? undefined} alt="" loading="lazy" className="size-12 shrink-0 rounded-lg border border-border object-cover" />}
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
             <p className="truncate font-semibold">{product.name}</p>
@@ -109,7 +111,9 @@ function ProductCard({ product }: { product: Product }) {
 export function InventoryPage() {
   const shop = useShop()
   const [query, setQuery] = useState('')
-  const [filter, setFilter] = useState<ProductFilter>('active')
+  const [params] = useSearchParams()
+  const initialFilter = FILTERS.some((f) => f.value === params.get('filter')) ? (params.get('filter') as ProductFilter) : 'active'
+  const [filter, setFilter] = useState<ProductFilter>(initialFilter)
   const debounced = useDebounced(query.trim())
 
   const products = useInfiniteQuery({

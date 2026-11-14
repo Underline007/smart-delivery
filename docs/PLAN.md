@@ -5,9 +5,9 @@
 
 | | |
 |---|---|
-| Phiên bản | 0.3 — đã xác nhận các giả định về 3 vai trò; ghi lại tiến độ bản nháp và quy ước kỹ thuật |
+| Phiên bản | 1.0 — đã triển khai toàn bộ giai đoạn 0–7; ghi lại các điểm lệch so với kế hoạch và việc cần bạn làm khi cài đặt |
 | Ngày | 13/11/2026 |
-| Trạng thái | **Có bản nháp code GĐ 0–1, chờ duyệt** (xem [mục 13](#13-tiến-độ-thực-hiện)). Còn chờ một số đầu vào, xem [mục 0](#0-nhật-ký-quyết-định) và [mục 11](#11-việc-còn-chờ) |
+| Trạng thái | **Đã code xong GĐ 0–7** và kiểm thử tự động. **Chưa chạy với Supabase / ViettelPost thật.** Xem [mục 13](#13-tiến-độ-thực-hiện) và hướng dẫn cài đặt [docs/SETUP.md](SETUP.md) |
 
 ---
 
@@ -35,12 +35,12 @@
 
 | # | Câu hỏi | Quyết định | Cần có trước |
 |---|---|---|---|
-| Q1 | File Excel mẫu tạo đơn hàng loạt của ViettelPost | ⏳ Bạn gửi sau | Giai đoạn 5 (M4) |
+| Q1 | File Excel mẫu tạo đơn hàng loạt của ViettelPost | ⏳ Bạn gửi sau. **Đã làm sẵn công cụ**: admin tải file mẫu lên và chọn cột nào chứa gì; trong lúc chờ dùng bố cục Excel chung | Trước khi dùng thật (xem [SETUP mục 10](SETUP.md#10-chuẩn-bị-dữ-liệu-cho-viettelpost)) |
 | Q2 | Vai trò người dùng | ✅ **3 vai trò: Admin, Chủ cửa hàng, Shipper.** Chủ cửa hàng tự chọn shipper cho shop | — |
-| Q3 | Dùng Google Maps (phải khai báo thẻ) hay không | ⏳ Chưa quyết. Giải thích ở [mục 3.3](#33-bản-đồ--địa-chỉ-2-cách-chờ-bạn-chọn-q3). Mặc định nếu chưa quyết: **Cách B (không thẻ)** | Giai đoạn 3 (M2) |
+| Q3 | Dùng Google Maps (phải khai báo thẻ) hay không | ✅ **Chưa chọn nên làm Cách B (không thẻ)**: bản đồ OpenStreetMap, dẫn đường bằng app Google Maps (miễn phí). **Cách A (gợi ý địa chỉ khi gõ bằng Google) chưa làm**, có thể thêm sau | — |
 | Q4 | Sản phẩm có biến thể không | ✅ **Có.** Tồn kho tính theo từng biến thể (màu/size…) | — |
 | Q5 | Thời điểm trừ kho | ✅ **Khi xác nhận đơn.** Cộng lại khi huỷ hoặc nhận hàng hoàn | — |
-| Q6 | Tin nhắn đặt hàng mẫu (để làm bộ tách địa chỉ) | ⏳ Bạn gửi sau, dạng file | Giai đoạn 3 (M2) |
+| Q6 | Tin nhắn đặt hàng mẫu (để làm bộ tách địa chỉ) | ⏳ Bạn gửi sau. Bộ tách đã làm và kiểm thử với các mẫu chung; gửi tin thật để tinh chỉnh | Khi có |
 | Q7 | Repo riêng tư | ⏳ Bạn đổi sau | Trước khi nhập dữ liệu thật |
 
 **Chi tiết của Q2** (✅ chủ dự án đã xác nhận cả 4 điểm ngày 13/11/2026)
@@ -432,7 +432,7 @@ Không có server riêng phải nuôi.
 | Công sức nhập liệu | Ít | Nhiều hơn với khách mới (lần giao đầu shipper ghim GPS, từ lần sau như Cách A) |
 
 **Khuyến nghị**: nếu khai báo thẻ không phải vấn đề, chọn **Cách A** vì nhập địa chỉ nhanh và toạ độ chính xác. Nếu muốn tuyệt đối không dính thẻ, **Cách B** vẫn dùng tốt, chỉ thêm thao tác với khách mới.
-App có lớp `MapProvider` / `GeocodingProvider`, nên bắt đầu bằng Cách B rồi chuyển sang Cách A sau **không phải viết lại**. Cần chốt trước Giai đoạn 3.
+**Hiện trạng:** bản này chỉ có Cách B. Muốn thêm Cách A cần bổ sung phần gợi ý địa chỉ / tìm toạ độ bằng Google (ô nhập địa chỉ và `LocationSheet`); các phần còn lại (dẫn đường, link Maps, GPS shipper) giữ nguyên.
 
 **Nếu chọn Cách A — bảo đảm 0đ**
 - Trong Google Cloud Console, **đặt quota cứng theo ngày** cho từng API, ví dụ Maps JS 300/ngày, Places 300/ngày, Geocoding 300/ngày, Routes 100/ngày. Tổng cả tháng luôn dưới hạn mức miễn phí (Essentials 10.000, Pro 5.000, Enterprise 1.000 lượt/tháng/SKU, áp dụng từ 03/2025).
@@ -808,15 +808,15 @@ Giả định: 1 người làm, khoảng 3–4 giờ/ngày, có AI hỗ trợ vi
 
 | GĐ | Nội dung | Thời lượng | Kết quả bàn giao | Hoàn thành khi | Cần có trước |
 |---|---|---|---|---|---|
-| **0** · 📝 có bản nháp, chờ duyệt | Khởi tạo nền tảng | 4 ngày | Tài khoản Supabase / Cloudflare / ORS. Dự án Vite + React + TS, Tailwind, shadcn/ui, PWA, ESLint, Vitest, Playwright. Supabase CLI: migration đầu, nạp danh mục tỉnh/xã, sinh type TS. CI + deploy tự động + cron giữ DB thức | Mở link `*.pages.dev` trên điện thoại, cài được lên màn hình chính | — |
-| **1** · 📝 có bản nháp, chờ duyệt | M0 Quản trị & 3 vai trò | 1 tuần | Bảng `shops` / `shop_members` / `profiles`, hàm RLS, Edge Function `admin-users`, đăng nhập SĐT, đổi mật khẩu lần đầu, chọn cửa hàng, màn Admin (A-01 → A-03), màn Shipper của shop (O-19), điều hướng theo vai trò, nhật ký thao tác | Admin tạo 2 shop + chủ shop + 2 shipper; 1 shipper thuộc 2 shop; **test tự động chứng minh shop A không đọc được dữ liệu shop B** | — |
-| **2** | M1 Sản phẩm (biến thể) & Kho | 1,5 tuần | Sản phẩm + thuộc tính + ma trận biến thể, sửa hàng loạt, ảnh, phiếu nhập & kiểm kho dạng lưới, thẻ kho, cảnh báo sắp hết, RPC kho + test SQL | Tạo SP 3 màu × 4 size, nhập kho lưới, kiểm kho, thẻ kho khớp tồn; test RPC đều qua | — |
-| **3** | M2 Khách hàng & địa chỉ | 1 tuần | CRUD khách, nhiều địa chỉ, smart paste, khớp tỉnh/xã + tên cũ, dán link Maps, chọn trên bản đồ, `MapProvider` (Cách B, thêm Cách A nếu chọn), chống trùng SĐT | Dán bộ tin nhắn mẫu, tách đúng ≥ 90% | **Q3** (Cách A/B), **Q6** (tin nhắn mẫu) |
-| **4** | M3 Đơn hàng | 1,5 tuần | Tạo / sửa / xác nhận / huỷ / mở lại / hoàn, chọn biến thể, danh sách + lọc + chọn nhiều, chi tiết + dòng thời gian, nhân bản, chia sẻ text | Tạo đơn khách cũ < 30 giây; huỷ/hoàn trả kho đúng từng biến thể; test E2E luồng đơn qua | — |
-| **5** | M4 Excel ViettelPost | 1 tuần | Đọc file mẫu thật, cấu hình ánh xạ (A-04), kiểm tra lỗi, xuất / chia sẻ, lô xuất, nhập ngược mã vận đơn | **Tải file lên VTP thật với 3–5 đơn, không có dòng lỗi định dạng** | **Q1** (file mẫu VTP) |
+| **0** · ✅ xong | Khởi tạo nền tảng | 4 ngày | Tài khoản Supabase / Cloudflare / ORS. Dự án Vite + React + TS, Tailwind, shadcn/ui, PWA, ESLint, Vitest, Playwright. Supabase CLI: migration đầu, nạp danh mục tỉnh/xã, sinh type TS. CI + deploy tự động + cron giữ DB thức | Mở link `*.pages.dev` trên điện thoại, cài được lên màn hình chính | — |
+| **1** · ✅ xong | M0 Quản trị & 3 vai trò | 1 tuần | Bảng `shops` / `shop_members` / `profiles`, hàm RLS, Edge Function `admin-users`, đăng nhập SĐT, đổi mật khẩu lần đầu, chọn cửa hàng, màn Admin (A-01 → A-03), màn Shipper của shop (O-19), điều hướng theo vai trò, nhật ký thao tác | Admin tạo 2 shop + chủ shop + 2 shipper; 1 shipper thuộc 2 shop; **test tự động chứng minh shop A không đọc được dữ liệu shop B** | — |
+| **2** · ✅ xong | M1 Sản phẩm (biến thể) & Kho | 1,5 tuần | Sản phẩm + thuộc tính + ma trận biến thể, sửa hàng loạt, ảnh, phiếu nhập & kiểm kho dạng lưới, thẻ kho, cảnh báo sắp hết, RPC kho + test SQL | Tạo SP 3 màu × 4 size, nhập kho lưới, kiểm kho, thẻ kho khớp tồn; test RPC đều qua | — |
+| **3** · ✅ xong | M2 Khách hàng & địa chỉ | 1 tuần | CRUD khách, nhiều địa chỉ, smart paste, khớp tỉnh/xã + tên cũ, dán link Maps, chọn trên bản đồ, `MapProvider` (Cách B, thêm Cách A nếu chọn), chống trùng SĐT | Dán bộ tin nhắn mẫu, tách đúng ≥ 90% | **Q3** (Cách A/B), **Q6** (tin nhắn mẫu) |
+| **4** · ✅ xong | M3 Đơn hàng | 1,5 tuần | Tạo / sửa / xác nhận / huỷ / mở lại / hoàn, chọn biến thể, danh sách + lọc + chọn nhiều, chi tiết + dòng thời gian, nhân bản, chia sẻ text | Tạo đơn khách cũ < 30 giây; huỷ/hoàn trả kho đúng từng biến thể; test E2E luồng đơn qua | — |
+| **5** · ✅ xong | M4 Excel ViettelPost | 1 tuần | Đọc file mẫu thật, cấu hình ánh xạ (A-04), kiểm tra lỗi, xuất / chia sẻ, lô xuất, nhập ngược mã vận đơn | **Tải file lên VTP thật với 3–5 đơn, không có dòng lỗi định dạng** | **Q1** (file mẫu VTP) |
 | 🎯 | **MVP** — dùng thật hằng ngày | ≈ 7 tuần | | | **Q7** (repo riêng tư) |
-| **6** | M5 Giao hàng & tối ưu tuyến | 1,5 tuần | Lập chuyến, tối ưu tầng A + B (+ C nếu Cách A), bản đồ, kéo-thả, chọn shipper của shop, màn shipper (nhiều shop), dẫn đường từng điểm, đã giao / thất bại, ảnh, GPS, đối soát COD, dọn ảnh 30 ngày | Chạy 1 chuyến giao thật ≥ 8 điểm từ đầu đến cuối trên điện thoại shipper | — |
-| **7** | M6 Tổng quan, báo cáo, hoàn thiện | 1 tuần | Dashboard, báo cáo (cả theo biến thể & shipper), báo cáo gộp cho admin, xuất dữ liệu, sao lưu tự động hằng tuần, theo dõi dung lượng, giao diện tối, rà soát bảo mật RLS | Thử khôi phục từ bản sao lưu thành công; Lighthouse PWA đạt | — |
+| **6** · ✅ xong | M5 Giao hàng & tối ưu tuyến | 1,5 tuần | Lập chuyến, tối ưu tầng A + B (+ C nếu Cách A), bản đồ, kéo-thả, chọn shipper của shop, màn shipper (nhiều shop), dẫn đường từng điểm, đã giao / thất bại, ảnh, GPS, đối soát COD, dọn ảnh 30 ngày | Chạy 1 chuyến giao thật ≥ 8 điểm từ đầu đến cuối trên điện thoại shipper | — |
+| **7** · ✅ xong | M6 Tổng quan, báo cáo, hoàn thiện | 1 tuần | Dashboard, báo cáo (cả theo biến thể & shipper), báo cáo gộp cho admin, xuất dữ liệu, sao lưu tự động hằng tuần, theo dõi dung lượng, giao diện tối, rà soát bảo mật RLS | Thử khôi phục từ bản sao lưu thành công; Lighthouse PWA đạt | — |
 | **8** | Mở rộng (tuỳ chọn) | — | Xem [mục 10](#10-hướng-mở-rộng) | | |
 
 **Thứ tự ưu tiên**: Excel ViettelPost (GĐ 5) đứng trước tối ưu tuyến (GĐ 6) vì đây là phần tiết kiệm thời gian nhiều nhất mỗi ngày. Nếu file mẫu VTP về muộn, đổi chỗ GĐ 5 và GĐ 6.
@@ -889,14 +889,16 @@ CI chạy lint, typecheck, unit test, test SQL và test phân quyền ở mỗi 
 
 ## 11. Việc còn chờ
 
-| # | Việc | Ai | Hạn |
+| # | Việc | Ai | Khi nào |
 |---|---|---|---|
-| Q1 | Gửi file Excel mẫu tạo đơn hàng loạt mới nhất (tải từ tài khoản ViettelPost), kèm 1 file danh sách đơn xuất từ VTP nếu có | Bạn | Trước GĐ 5 (khoảng tuần 5) |
-| Q3 | Chọn **Cách A (Google, có khai báo thẻ)** hay **Cách B (không thẻ)** — xem [mục 3.3](#33-bản-đồ--địa-chỉ-2-cách-chờ-bạn-chọn-q3) | Bạn | Trước GĐ 3 (khoảng tuần 3) |
-| Q6 | Gửi file tin nhắn đặt hàng mẫu (10–20 tin, đã che thông tin) | Bạn | Trước GĐ 3 |
-| Q7 | Đổi repo sang riêng tư | Bạn | Trước khi nhập dữ liệu thật |
-| ~~A1–A4~~ | ~~Xác nhận các giả định về 3 vai trò~~ — ✅ đã xác nhận 13/11/2026 | — | — |
-| Duyệt bản nháp | Quyết định có làm tiếp từ bản nháp GĐ 0–1 hay không ([mục 13](#13-tiến-độ-thực-hiện)) | Bạn | Trước khi viết thêm code |
+| 1 | Cài đặt theo [SETUP.md](SETUP.md) và làm danh sách kiểm tra ở mục 8 | Bạn | Đầu tiên |
+| Q1 | Gửi / tải lên **file Excel mẫu “tạo đơn hàng loạt”** của ViettelPost (và 1 file danh sách đơn xuất từ ViettelPost nếu có) rồi chỉnh cột; thử 3–5 đơn thật | Bạn | Trước khi dùng ViettelPost thật |
+| 2 | Nhập **danh mục phường/xã** (CSV) theo danh mục ViettelPost | Bạn / admin | Trước khi tạo đơn ViettelPost |
+| Q6 | Gửi **tin nhắn đặt hàng mẫu** (10–20 tin, đã che thông tin) để tinh chỉnh bộ tách địa chỉ | Bạn | Khi có |
+| Q7 | **Đổi repo sang riêng tư** | Bạn | Trước khi nhập dữ liệu thật |
+| 3 | Thử trên **điện thoại thật** (cài PWA, ảnh, GPS, Google Maps, chia sẻ file) | Bạn | Sau khi cài đặt |
+| Q3 | Quyết định có làm **Cách A** (gợi ý địa chỉ bằng Google, cần khai báo thẻ) hay không | Bạn | Khi thấy nhập địa chỉ còn chậm |
+| ~~A1–A4~~ | ~~Xác nhận giả định về 3 vai trò~~ — ✅ 13/11/2026 | — | — |
 
 ---
 
@@ -917,52 +919,54 @@ CI chạy lint, typecheck, unit test, test SQL và test phân quyền ở mỗi 
 
 ## 13. Tiến độ thực hiện
 
-> ⚠️ Code Giai đoạn 0–1 hiện là **bản nháp chưa được duyệt**.
-> Bản nháp được viết trước khi chủ dự án đồng ý bắt đầu code, và được lưu lại nguyên trạng ở commit `WIP (bản nháp, chưa duyệt)` để không bị mất. **Chỉ làm tiếp khi chủ dự án đồng ý.**
-> App **chưa chạy được** vì còn thiếu `src/main.tsx` và `src/App.tsx`.
+### 13.1 Kết quả
 
-### 13.1 Phần đã viết (bản nháp)
+Toàn bộ giai đoạn 0–7 đã được viết và kiểm thử tự động.
 
-| Phần | File | Đã kiểm tra chưa |
+| Giai đoạn | Nội dung | Trạng thái |
 |---|---|---|
-| Khung dự án (GĐ 0) | `package.json`, `tsconfig*.json`, `eslint.config.js`, `.prettierrc.json`, `vite.config.ts` (PWA manifest), `vitest.config.ts` (2 nhóm test: unit / db), `index.html`, `public/` (icon đã sinh), `.env.example`, `.gitignore`, `pwa-assets.config.ts` | Đã cài thư viện; **chưa build / lint / kiểm tra kiểu** |
-| Cơ sở dữ liệu M0 | `supabase/migrations/20261113000100_m0_accounts_shops.sql`: 5 bảng (`profiles`, `shops`, `shop_members`, `system_settings`, `audit_logs`), hàm phân quyền, RLS, 13 RPC (xem [mục 4.3](#43-hàm-nghiệp-vụ-rpc-chạy-trong-transaction)) | Có test |
-| Cấu hình Supabase | `supabase/config.toml`: tắt tự đăng ký, mật khẩu ≥ 8 ký tự, `verify_jwt = false` cho `admin-users` | — |
-| Test DB | `supabase/tests/shim.sql` (giả lập phần auth của Supabase), `tests/db/*` | **28 test qua** trên Postgres 16: cô lập dữ liệu giữa shop, quyền của shipper, chặn ghi trực tiếp, chặn tự nâng quyền. Sau đó thêm `admin_db_usage` + 2 test, **chưa chạy lại** |
-| Edge Function | `supabase/functions/admin-users/` (tạo / sửa / đặt lại mật khẩu / khoá), `supabase/functions/_shared/vn-phone.ts` (dùng chung với web) | Qua `deno check` + `deno lint` |
-| Tạo admin đầu tiên | `scripts/create-admin.mjs` | Chưa chạy (cần project Supabase thật) |
-| Giao diện | `src/lib/*`, `src/app/*` (session, chọn shop, chặn quyền, layout theo vai trò), `src/components/*`. Các trang: Đăng nhập, Đổi mật khẩu, khối Tài khoản; Admin: Hệ thống (A-01), Cửa hàng (A-02), Tài khoản (A-03) | **Chưa kiểm tra kiểu, chưa chạy** |
+| 0–1 | Khung PWA, 3 vai trò, nhiều cửa hàng, tài khoản, shipper của shop, nhật ký | ✅ |
+| 2 (M1) | Sản phẩm có biến thể, kho theo biến thể, nhập kho / kiểm kho dạng lưới, thẻ kho, ảnh | ✅ |
+| 3 (M2) | Khách hàng, địa chỉ 2 cấp, dán tin nhắn, link Google Maps, ghim bản đồ | ✅ (Cách B, xem 13.3) |
+| 4 (M3) | Đơn hàng, vòng đời, trừ/cộng kho, chia sẻ tin nhắn, nhân bản | ✅ |
+| 5 (M4) | Xuất Excel ViettelPost, lô xuất, nhập mã vận đơn, cấu hình mẫu | ✅ (chờ file mẫu thật) |
+| 6 (M5) | Chuyến giao, tối ưu tuyến, màn shipper, đối soát COD, ảnh giao hàng | ✅ |
+| 7 (M6) | Tổng quan, báo cáo, xuất dữ liệu, sao lưu, giữ DB thức, dọn ảnh, CI | ✅ |
 
-### 13.2 Phần còn dở
+**Kiểm thử tự động** (tất cả chạy ở mỗi lần push qua `.github/workflows/ci.yml`):
 
-1. **Trang còn thiếu**:
-   - Cài đặt admin.
-   - Tổng quan chủ shop (O-01, bản tạm).
-   - **Shipper của shop (O-19)**.
-   - Cài đặt shop (O-18, phần thông tin shop).
-   - Chuyến hôm nay của shipper (S-01, bản tạm) và trang Tài khoản của shipper.
-   - Trang "Sắp có" cho các module chưa làm.
-   - `src/App.tsx` (định tuyến), `src/main.tsx` (providers, toast).
-   - Màn "chưa cấu hình Supabase".
-2. **Sửa nhỏ**:
-   - `tsconfig.app.json` thêm `supabase/functions/_shared`.
-   - Thay emoji 📞 bằng icon trong `AdminShopsPage`.
-   - Kiểm tra icon `Share2` có trong lucide-react.
-3. **Kiểm tra**: typecheck, lint, unit test, chạy lại test DB, build, chụp màn hình ở khung điện thoại.
-4. **CI**: `.github/workflows/ci.yml` (lint, typecheck, unit, test DB với Postgres service, build) và `keepalive.yml` (ping Supabase mỗi 3 ngày).
-5. **`docs/SETUP.md`**:
-   - Tạo project Supabase (vùng Singapore), áp migration.
-   - Deploy function, đặt secret `LOGIN_EMAIL_DOMAIN`.
-   - Tạo admin đầu tiên.
-   - Kết nối Cloudflare Pages, đặt GitHub secrets.
-6. **Chủ dự án cần làm khi triển khai thật**: tạo tài khoản Supabase, Cloudflare, OpenRouteService.
-7. **Rủi ro chưa kiểm chứng**: Supabase Auth có nhận email nội bộ dạng `<sđt>@phone.smart-delivery.invalid` không. Nếu không, đổi tên miền qua biến môi trường (đã làm sẵn).
+| Loại | Số test | Kiểm tra gì |
+|---|---:|---|
+| Test cơ sở dữ liệu (PostgreSQL thật) | 163 | Phân quyền / RLS giữa các shop và vai trò; tồn kho khớp sổ kho; vòng đời đơn; **hai người xác nhận cùng lúc**; chuyến giao; báo cáo; quyền kho ảnh |
+| Test đơn vị | 203 | Chuẩn hoá SĐT, tách tin nhắn / địa chỉ, đọc link Maps, CSV, tính tiền, tối ưu tuyến (so với vét cạn), tạo & đọc lại file Excel |
+| Test giao diện điện thoại (Chromium, màn 390 px) | 45 | Đăng nhập & điều hướng theo vai trò, các luồng chính của chủ shop và shipper, file Excel tải về được đọc lại |
+| Kiểm tra kiểu + lint + Deno (Edge Functions) | — | 0 lỗi |
 
----
+### 13.2 Điểm khác kế hoạch ban đầu
+
+| Kế hoạch | Thực tế | Lý do |
+|---|---|---|
+| Cách A: Google Places / Geocoding | **Chưa làm**, chỉ làm Cách B | Chưa quyết khai báo thẻ; làm Cách B trọn vẹn trước |
+| Tối ưu tuyến bằng Google Routes (tầng C) | **Không làm** | Phụ thuộc Cách A |
+| Kéo-thả sắp xếp điểm giao | Nút lên / xuống | Ổn định hơn trên điện thoại |
+| Tối ưu tuyến tầng B (OpenRouteService) | Có, **tuỳ chọn** (cần `ORS_API_KEY`); mặc định dùng thuật toán trên máy | Miễn phí, không cần thẻ |
+| Giữ DB thức bằng truy vấn bất kỳ | Hàm công khai `keepalive()` | Gọi được không cần đăng nhập mà không lộ dữ liệu |
+| Danh mục tỉnh/xã nạp sẵn | 34 tỉnh nạp sẵn (kèm tên các tỉnh cũ đã gộp); **xã/phường do admin nhập từ CSV** | Không tải được dữ liệu từ ngoài; nên dùng đúng danh mục của ViettelPost |
+| Thẻ “Hệ thống” báo dung lượng file | Chỉ báo dung lượng database | API của Storage không cho đọc tổng dung lượng bằng khoá thường |
+| Mã tỉnh | Mã 2 số do hệ thống đặt | Có thể khác mã của ViettelPost; file CSV nhập xã/phường nhận cả tên tỉnh |
+
+### 13.3 Việc cần bạn làm / chưa kiểm chứng
+
+1. **Cài đặt thật** theo [SETUP.md](SETUP.md) rồi làm danh sách kiểm tra ở mục 8 của file đó. Mã nguồn chưa từng chạy với project Supabase thật; rủi ro lớn nhất là Supabase Auth không nhận email nội bộ `…@phone.smart-delivery.invalid` (cách xử lý ở bảng sự cố).
+2. **File mẫu ViettelPost**: tải lên ở trang admin, chọn cột, xuất thử 3–5 đơn và tải lên ViettelPost. Cho đến lúc đó, file xuất ra dùng bố cục chung và **có thể bị ViettelPost từ chối**.
+3. **Danh mục phường/xã** (CSV theo danh mục ViettelPost) và **tin nhắn mẫu** để tinh chỉnh bộ tách địa chỉ.
+4. **Thử trên điện thoại thật**: cài PWA, chụp ảnh, GPS, mở Google Maps, chia sẻ file Excel qua Zalo. Test tự động chỉ giả lập màn hình.
+5. **Thử khôi phục** từ bản sao lưu vào project trống.
+6. Chưa làm (để sau, mục 10): API ViettelPost, quét mã vạch, thao tác offline cho shipper, thông báo đẩy, in nhãn.
 
 ## 14. Quy ước kỹ thuật
 
-Rút ra khi viết bản nháp; áp dụng cho mọi phần làm sau.
+Áp dụng cho mọi phần làm sau.
 
 **Phiên bản đã chốt**
 
@@ -977,15 +981,18 @@ Rút ra khi viết bản nháp; áp dụng cho mọi phần làm sau.
 | React Router | 7.18 | Chưa dùng v8 |
 | TypeScript | 6.0 | TS 7 chưa được typescript-eslint hỗ trợ |
 | Vitest | 5 | |
+| ExcelJS | 4.4 | Tạo / đọc Excel trong trình duyệt, tải khi cần |
+| Leaflet | 1.9 | Bản đồ OpenStreetMap, tải khi cần |
+| Playwright | 1.63 | Test giao diện, Chromium giả lập điện thoại |
 | Supabase CLI | 3.1 | Dùng Postgres 17 |
 
 **Test cơ sở dữ liệu không cần Docker**
 - Dùng Postgres thường + `supabase/tests/shim.sql`, file này giả lập `auth.uid()` và các role `anon` / `authenticated` / `service_role` của Supabase.
-- Chạy: `DATABASE_URL=postgres://… npm run test:db`. Mỗi lần chạy tạo DB mới và áp toàn bộ migration.
+- Chạy: `DATABASE_URL=postgres://… npm run test:db`. Mỗi lần chạy dựng một DB mẫu từ toàn bộ migration; **mỗi file test dùng một bản sao riêng** nên không ảnh hưởng nhau.
 - CI dùng service Postgres của GitHub Actions.
 
 **Quy ước cho mọi migration**
-- Supabase mặc định cho `anon` quyền gọi mọi hàm, nên **mỗi migration phải thu hồi quyền rồi chỉ cấp lại cho `authenticated`**.
+- Supabase mặc định cho `anon` quyền gọi mọi hàm. **Mỗi migration kết thúc bằng `select public._apply_grants();`**: thu hồi quyền của `anon` / `authenticated`, bảng chỉ cho `SELECT`, hàm chỉ cấp cho `authenticated` (trừ hàm bắt đầu bằng `_` hoặc `tg_`, và `keepalive()` cho `anon`).
 - Bật RLS cho mọi bảng. Mọi thao tác ghi đi qua hàm `SECURITY DEFINER` có `set search_path = ''`; app không ghi bảng trực tiếp.
 - Mỗi bảng nghiệp vụ có `shop_id`. Kiểm tra quyền bằng `is_admin()` / `is_shop_owner()` / `can_manage_shop()`.
 - Thông báo lỗi viết bằng tiếng Việt để app hiển thị thẳng.
@@ -1012,3 +1019,13 @@ Rút ra khi viết bản nháp; áp dụng cho mọi phần làm sau.
 - Bộ màu sáng/tối theo cài đặt của máy, khai báo bằng biến CSS.
 - Component dùng chung: `Button`, `TextField` / `PasswordField` / `SelectField` / `SearchInput`, `Sheet`, `ConfirmSheet`, `PageHeader`, `AppShell` (thanh điều hướng dưới theo vai trò).
 - Lỗi từ Supabase được đổi sang tiếng Việt ở một chỗ (`src/lib/errors.ts`).
+
+**Quy ước bổ sung (GĐ 2–7)**
+- **Một cửa duy nhất cho mỗi nghiệp vụ nhạy cảm**: đơn đổi trạng thái chỉ qua `set_order_status`; kho chỉ đổi qua `_apply_stock_change` (ghi sổ kho); trạng thái đơn trong chuyến giao chỉ đổi qua `complete_stop` / `fail_stop`. Hàm kiểm tra quyền trước, khoá dòng (`FOR UPDATE`) theo thứ tự cố định để tránh khoá chéo.
+- **Số liệu của khách hàng** (`order_count`, `total_spent`…) luôn **tính lại từ đơn hàng** (`_refresh_customer_stats`), không cộng dồn.
+- **Shipper không đọc bảng trực tiếp**, chỉ qua `get_my_trips` / `get_my_trip_history` (không có giá vốn, tổng tiền, khách khác).
+- **Ảnh**: đường dẫn bắt đầu bằng mã shop; ảnh sản phẩm nén ≤ 800 px; ảnh giao hàng nén ≤ 900 px, tên duy nhất (shipper chỉ được thêm, không ghi đè) và tự xoá sau 30 ngày.
+- **Báo cáo** tính tiền trên đơn **đã giao**, theo ngày giao (giờ Việt Nam); lợi nhuận gộp = tiền hàng − giảm giá − giá vốn (phí ship không tính).
+- **Giá vốn** của biến thể là **trung bình động** theo các phiếu nhập; mỗi dòng đơn lưu giá vốn tại thời điểm bán.
+- **Test giao diện** giả lập toàn bộ API Supabase (`tests/e2e/mock.ts`), nên chạy được không cần backend; luôn kiểm tra thêm bằng test DB cho phần quyền.
+- **Tải theo nhu cầu**: các trang (trừ đăng nhập) và các thư viện nặng (Excel, bản đồ) chỉ tải khi mở; Excel không nằm trong bộ nhớ đệm cài đặt ban đầu.
